@@ -1,1 +1,2 @@
 - [x] Add Admin Dashboard link to main navigation in Navbar when user is admin
+- [x] Update app/(public)/loading.js to include full page layout with Navbar, centered loading animation and message, and Footer
