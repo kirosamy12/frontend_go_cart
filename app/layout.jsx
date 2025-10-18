@@ -14,8 +14,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en" className="dark">
-            <body className={`${outfit.className} antialiased bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100`}>
+        <html lang="en">
+            <body className={`${outfit.className} antialiased bg-white text-slate-900`}>
                 <ThemeProvider>
                     <StoreProvider>
                         <AuthInitializer />
