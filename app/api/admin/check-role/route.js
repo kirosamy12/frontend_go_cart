@@ -10,8 +10,10 @@ export async function GET(request) {
 
         // Check for token in header or cookie
         let token = null
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            token = authHeader.substring(7)
+        if (authHeader) {
+            token = authHeader
+        } else if (request.headers.get('token')) {
+            token = request.headers.get('token')
         } else if (cookies.get('token')) {
             token = cookies.get('token').value
         }
@@ -23,22 +25,29 @@ export async function GET(request) {
             )
         }
 
-        // Verify token and get user info
-        // const decoded = verifyToken(token)
-        // if (!decoded) {
-        //     return NextResponse.json(
-        //         { isAdmin: false, error: 'Invalid token' },
-        //         { status: 401 }
-        //     )
-        // }
+        // Decode token to get user role
+        try {
+            const parts = token.split('.')
+            if (parts.length === 3) {
+                const payload = JSON.parse(atob(parts[1]))
+                const userRole = payload.role
 
-        // For now, simulate admin check (replace with actual verification)
-        // const userRole = decoded.role
-        const userRole = 'admin' // Simulate admin role for testing
+                const isAdmin = userRole === 'admin'
 
-        const isAdmin = userRole === 'admin'
-
-        return NextResponse.json({ isAdmin })
+                return NextResponse.json({ isAdmin })
+            } else {
+                return NextResponse.json(
+                    { isAdmin: false, error: 'Invalid token format' },
+                    { status: 401 }
+                )
+            }
+        } catch (decodeError) {
+            console.error('Error decoding token:', decodeError)
+            return NextResponse.json(
+                { isAdmin: false, error: 'Invalid token' },
+                { status: 401 }
+            )
+        }
 
     } catch (error) {
         console.error('Error checking admin role:', error)

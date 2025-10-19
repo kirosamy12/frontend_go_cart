@@ -25,33 +25,27 @@ export default function AdminDashboard() {
         { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon },
     ]
 
-    const fetchDashboardData = async () => {
-        try {
-            const res = await fetch('https://go-cart-1bwm.vercel.app/api/admin/dashboard', {
-                headers: {
-                    // Add admin token if needed
-                }
-            })
-            if (res.ok) {
-                const data = await res.json()
-                setDashboardData({
-                    products: data.products || 0,
-                    revenue: data.revenue || 0,
-                    orders: data.orders || 0,
-                    stores: data.stores || 0,
-                    allOrders: data.allOrders || [],
-                })
-            } else {
-                setDashboardData({
-                    products: 0,
-                    revenue: 0,
-                    orders: 0,
-                    stores: 0,
-                    allOrders: [],
-                })
+const fetchDashboardData = async () => {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('token')
+
+        const res = await fetch('https://go-cart-1bwm.vercel.app/api/admin/dashboard', {
+            headers: {
+                'token': token ? `${token}` : '',
+                'Content-Type': 'application/json',
             }
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error)
+        })
+        if (res.ok) {
+            const data = await res.json()
+            setDashboardData({
+                products: data.products || 0,
+                revenue: data.revenue || 0,
+                orders: data.orders || 0,
+                stores: data.stores || 0,
+                allOrders: data.allOrders || [],
+            })
+        } else {
             setDashboardData({
                 products: 0,
                 revenue: 0,
@@ -60,8 +54,18 @@ export default function AdminDashboard() {
                 allOrders: [],
             })
         }
-        setLoading(false)
+    } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+        setDashboardData({
+            products: 0,
+            revenue: 0,
+            orders: 0,
+            stores: 0,
+            allOrders: [],
+        })
     }
+    setLoading(false)
+}
 
     useEffect(() => {
         fetchDashboardData()

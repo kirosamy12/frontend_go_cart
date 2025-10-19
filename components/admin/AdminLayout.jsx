@@ -13,10 +13,12 @@ const AdminLayout = ({ children }) => {
 
     const fetchIsAdmin = async () => {
         try {
+            const token = localStorage.getItem('token')
             const res = await fetch('/api/admin/check-role', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'token': token ? `${token}` : '',
                 },
                 credentials: 'include' // Include cookies if using session-based auth
             })

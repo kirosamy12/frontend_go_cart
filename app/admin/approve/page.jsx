@@ -13,9 +13,10 @@ export default function AdminApprove() {
 
     const fetchStores = async () => {
         try {
+            const token = localStorage.getItem('token')
             const res = await fetch('https://go-cart-1bwm.vercel.app/api/admin/stores/pending', {
                 headers: {
-                    // Add admin token if needed
+                    'token': token
                 }
             })
             if (res.ok) {
@@ -34,13 +35,15 @@ export default function AdminApprove() {
     const handleApprove = async ({ storeId, status }) => {
         // Logic to approve a store
         try {
-            const res = await fetch(`https://go-cart-1bwm.vercel.app/api/admin/stores/${storeId}/status`, {
+            const token = localStorage.getItem('token')
+            const action = status === 'approved' ? 'approve' : 'reject'
+            const res = await fetch(`https://go-cart-1bwm.vercel.app/api/stores/${storeId}/status`, {
                 method: 'PUT',
                 headers: {
+                    'token': token,
                     'Content-Type': 'application/json',
-                    // Add admin token if needed
                 },
-                body: JSON.stringify({ status })
+                body: JSON.stringify({ action })
             })
 
             if (res.ok) {

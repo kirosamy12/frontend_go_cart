@@ -12,9 +12,10 @@ export default function AdminStores() {
 
     const fetchStores = async () => {
         try {
-            const res = await fetch('https://go-cart-1bwm.vercel.app/api/admin/stores', {
+            const token = localStorage.getItem('token')
+            const res = await fetch('https://go-cart-1bwm.vercel.app/api/getAllStores', {
                 headers: {
-                    // Add admin token if needed
+                    'token': token
                 }
             })
             if (res.ok) {
@@ -33,10 +34,11 @@ export default function AdminStores() {
     const toggleIsActive = async (storeId) => {
         // Logic to toggle the status of a store
         try {
+            const token = localStorage.getItem('token')
             const res = await fetch(`https://go-cart-1bwm.vercel.app/api/admin/stores/${storeId}/toggle`, {
                 method: 'PUT',
                 headers: {
-                    // Add admin token if needed
+                    'token': token
                 }
             })
 
