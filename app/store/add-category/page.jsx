@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import Loading from "@/components/Loading"
 import { addCategory } from "@/lib/features/category/categorySlice"
@@ -15,14 +15,23 @@ export default function AddCategory() {
     const [imagePreview, setImagePreview] = useState("")
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
+        const file = e.target.files?.[0]
+        if (file && file.type.startsWith('image/')) {
             setCategoryImage(file)
             const reader = new FileReader()
-            reader.onload = () => {
-                setImagePreview(reader.result)
+            reader.onload = (event) => {
+                setImagePreview(event.target?.result || "")
+            }
+            reader.onerror = () => {
+                toast.error("Error reading image file")
+                setCategoryImage(null)
+                setImagePreview("")
             }
             reader.readAsDataURL(file)
+        } else if (file) {
+            toast.error("Please select a valid image file")
+            setCategoryImage(null)
+            setImagePreview("")
         }
     }
 
