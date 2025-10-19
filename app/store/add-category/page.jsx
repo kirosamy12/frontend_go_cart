@@ -72,14 +72,30 @@ export default function AddCategory() {
         <form onSubmit={onSubmitHandler} className="text-slate-500 mb-28 max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md border border-gray-200">
             <h1 className="text-3xl font-semibold mb-6 text-slate-800">Add New <span className="text-blue-600">Category</span></h1>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="categoryName" className="flex flex-col gap-2 my-6">
                 Category Name
-                <input type="text" name="name" onChange={e => setCategoryName(e.target.value)} value={categoryName} placeholder="Enter category name" className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                <input
+                    id="categoryName"
+                    type="text"
+                    name="name"
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    value={categoryName}
+                    placeholder="Enter category name"
+                    className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    required
+                />
             </label>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="categoryImage" className="flex flex-col gap-2 my-6">
                 Category Image
-                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                <input
+                    id="categoryImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    required
+                />
                 {imagePreview && (
                     <div className="mt-2">
                         <img src={imagePreview} alt="Category preview" className="w-32 h-32 object-cover rounded-md border" />
