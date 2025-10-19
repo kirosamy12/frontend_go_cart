@@ -11,6 +11,20 @@ export default function AddCategory() {
     const { loading } = useSelector(state => state.category)
 
     const [categoryName, setCategoryName] = useState("")
+    const [categoryImage, setCategoryImage] = useState(null)
+    const [imagePreview, setImagePreview] = useState("")
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            setCategoryImage(file)
+            const reader = new FileReader()
+            reader.onload = () => {
+                setImagePreview(reader.result)
+            }
+            reader.readAsDataURL(file)
+        }
+    }
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
@@ -25,10 +39,21 @@ export default function AddCategory() {
             return
         }
 
+        if (!categoryImage) {
+            toast.error("Category image is required")
+            return
+        }
+
         try {
-            await dispatch(addCategory({ name: categoryName })).unwrap()
+            const formData = new FormData()
+            formData.append('name', categoryName)
+            formData.append('image', categoryImage)
+
+            await dispatch(addCategory(formData)).unwrap()
             toast.success("Category added successfully")
             setCategoryName("")
+            setCategoryImage(null)
+            setImagePreview("")
         } catch (error) {
             toast.error("Failed to add category")
         }
@@ -41,6 +66,16 @@ export default function AddCategory() {
             <label htmlFor="" className="flex flex-col gap-2 my-6 ">
                 Category Name
                 <input type="text" name="name" onChange={e => setCategoryName(e.target.value)} value={categoryName} placeholder="Enter category name" className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+            </label>
+
+            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+                Category Image
+                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full max-w-sm p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                {imagePreview && (
+                    <div className="mt-2">
+                        <img src={imagePreview} alt="Category preview" className="w-32 h-32 object-cover rounded-md border" />
+                    </div>
+                )}
             </label>
 
             <button disabled={loading} className="bg-blue-600 text-white px-6 mt-7 py-3 hover:bg-blue-700 rounded-md transition disabled:opacity-50">
