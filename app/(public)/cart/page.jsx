@@ -13,7 +13,7 @@ export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
-    const { cartItems } = useSelector(state => state.cart);
+    const { items: cartItems } = useSelector(state => state.cart);
     const products = useSelector(state => state.product.list);
     const { token } = useSelector(state => state.auth);
 
@@ -25,14 +25,16 @@ export default function Cart() {
     const createCartArray = () => {
         setTotalPrice(0);
         const cartArray = [];
-        for (const [key, value] of Object.entries(cartItems)) {
-            const product = products.find(product => product.id === key);
-            if (product) {
-                cartArray.push({
-                    ...product,
-                    quantity: value,
-                });
-                setTotalPrice(prev => prev + product.price * value);
+        if (cartItems && typeof cartItems === 'object') {
+            for (const [key, value] of Object.entries(cartItems)) {
+                const product = products.find(product => product.id === key);
+                if (product) {
+                    cartArray.push({
+                        ...product,
+                        quantity: value,
+                    });
+                    setTotalPrice(prev => prev + product.price * value);
+                }
             }
         }
         setCartArray(cartArray);
@@ -58,7 +60,7 @@ export default function Cart() {
 
     // Create cart on backend when user is authenticated and cart is empty
     useEffect(() => {
-        if (token && Object.keys(cartItems).length === 0) {
+        if (token && cartItems && Object.keys(cartItems).length === 0) {
             dispatch(createCart());
         }
     }, [token, cartItems, dispatch]);
