@@ -13,23 +13,32 @@ const ProductDetails = ({ product }) => {
     const productId = product?.id || product?._id;
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
-    const cartItems = useSelector(state => state.cart.items || {});
+    const cartItems = useSelector(state => state.cart.cartItems || {});
     const dispatch = useDispatch();
 
     const router = useRouter()
 
     const [mainImage, setMainImage] = useState('/placeholder-image.jpg');
+    const [selectedColor, setSelectedColor] = useState('');
 
     // Set main image when product changes
     useEffect(() => {
         if (product?.images && product.images.length > 0) {
             setMainImage(product.images[0]);
         }
-    }, [product]);
+        // Set default selected color if colors are available
+        if (product?.colors && product.colors.length > 0 && !selectedColor) {
+            setSelectedColor(product.colors[0]);
+        }
+    }, [product, selectedColor]);
 
     const addToCartHandler = () => {
         if (productId) {
-            dispatch(addToCartAsync({ productId, quantity: 1 }))
+            dispatch(addToCartAsync({
+                productId,
+                quantity: 1,
+                selectedColor: selectedColor || null
+            }))
         }
     }
 
@@ -65,6 +74,31 @@ const ProductDetails = ({ product }) => {
                     <TagIcon size={14} />
                     <p>Save {product?.mrp && product?.price ? ((product.mrp - product.price) / product.mrp * 100).toFixed(0) : 0}% right now</p>
                 </div>
+
+                {/* Color Selection */}
+                {product?.colors && product.colors.length > 0 && (
+                    <div className="mt-6">
+                        <p className="text-sm font-medium text-slate-700 mb-3">Select Color</p>
+                        <div className="flex gap-2 flex-wrap">
+                            {product.colors.map((color, index) => (
+                                <div
+                                    key={index}
+                                    onClick={() => setSelectedColor(color)}
+                                    className={`w-8 h-8 rounded-full border-2 cursor-pointer transition-all ${
+                                        selectedColor === color
+                                            ? 'border-blue-500 ring-2 ring-blue-200'
+                                            : 'border-gray-300 hover:border-gray-500'
+                                    }`}
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                />
+                            ))}
+                        </div>
+                        {selectedColor && (
+                            <p className="text-xs text-slate-500 mt-2">Selected: <span className="font-medium">{selectedColor}</span></p>
+                        )}
+                    </div>
+                )}
                 <div className="flex items-end gap-5 mt-10">
                     {
                         cartItems[productId] && (
@@ -74,7 +108,11 @@ const ProductDetails = ({ product }) => {
                             </div>
                         )
                     }
-                    <button onClick={() => !cartItems[productId] ? addToCartHandler() : router.push('/cart')} className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition">
+                    <button
+                        onClick={() => !cartItems[productId] ? addToCartHandler() : router.push('/cart')}
+                        disabled={product?.colors && product.colors.length > 0 && !selectedColor}
+                        className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         {!cartItems[productId] ? 'Add to Cart' : 'View Cart'}
                     </button>
                 </div>

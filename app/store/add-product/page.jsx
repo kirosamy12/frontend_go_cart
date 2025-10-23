@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-hot-toast"
 import { addProduct } from "@/lib/features/product/productSlice"
 import { fetchCategories } from "@/lib/features/category/categorySlice"
+import ColorPicker from "@/components/ColorPicker"
 
 export default function StoreAddProduct() {
 
@@ -21,6 +22,7 @@ export default function StoreAddProduct() {
         price: 0,
         category: "",
         inStock: true,
+        colors: [],
     })
     const [loading, setLoading] = useState(false)
 
@@ -87,6 +89,11 @@ export default function StoreAddProduct() {
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock.toString())
 
+            // Add colors as array
+            productInfo.colors.forEach(color => {
+                formData.append('colors', color)
+            })
+
             // Add images as array
             images.forEach(image => {
                 formData.append('images', image)
@@ -94,7 +101,7 @@ export default function StoreAddProduct() {
 
             const result = await dispatch(addProduct(formData)).unwrap()
             toast.success("Product added successfully!")
-            setProductInfo({ name: "", description: "", mrp: 0, price: 0, category: "", inStock: true })
+            setProductInfo({ name: "", description: "", mrp: 0, price: 0, category: "", inStock: true, colors: [] })
             setImages([])
         } catch (error) {
             console.error('Product addition error:', error)
@@ -188,6 +195,11 @@ export default function StoreAddProduct() {
                 />
                 <span>In Stock</span>
             </label>
+
+            <ColorPicker
+                colors={productInfo.colors}
+                onChange={(colors) => setProductInfo({ ...productInfo, colors })}
+            />
 
             <br />
 

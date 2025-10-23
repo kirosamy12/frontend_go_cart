@@ -13,7 +13,7 @@ export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
-    const { items: cartItems } = useSelector(state => state.cart);
+    const { cartItems } = useSelector(state => state.cart);
     const products = useSelector(state => state.product.list);
     const { token } = useSelector(state => state.auth);
 
@@ -27,13 +27,16 @@ export default function Cart() {
         const cartArray = [];
         if (cartItems && typeof cartItems === 'object') {
             for (const [key, value] of Object.entries(cartItems)) {
-                const product = products.find(product => product.id === key);
+                const product = products.find(product => (product.id || product._id) === key);
                 if (product) {
+                    // Check if cartItems[key] is an object with quantity and selectedColor
+                    const itemData = typeof value === 'object' ? value : { quantity: value, selectedColor: null };
                     cartArray.push({
                         ...product,
-                        quantity: value,
+                        quantity: itemData.quantity,
+                        selectedColor: itemData.selectedColor,
                     });
-                    setTotalPrice(prev => prev + product.price * value);
+                    setTotalPrice(prev => prev + product.price * itemData.quantity);
                 }
             }
         }
@@ -102,6 +105,9 @@ export default function Cart() {
                                             <div>
                                                 <p className="max-sm:text-sm">{item.name}</p>
                                                 <p className="text-xs text-slate-500">{item.category?.name}</p>
+                                                {item.selectedColor && (
+                                                    <p className="text-xs text-blue-600">Color: {item.selectedColor}</p>
+                                                )}
                                                 <p>{currency}{item.price}</p>
                                             </div>
                                         </td>

@@ -22,13 +22,7 @@ const StoreSidebar = ({storeInfo}) => {
                 { name: 'Manage Products', href: '/store/manage-product', icon: PackageIcon }
             ]
         },
-        {
-            title: 'Categories',
-            items: [
-                { name: 'Add Category', href: '/store/add-category', icon: FolderPlusIcon },
-                { name: 'Manage Categories', href: '/store/manage-category', icon: FolderIcon }
-            ]
-        },
+
         {
             title: 'Orders',
             items: [

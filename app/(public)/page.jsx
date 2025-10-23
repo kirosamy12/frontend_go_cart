@@ -1,5 +1,6 @@
 import Hero from "@/components/Hero"
 import StoresSection from "@/components/StoresSection"
+import AllProductsSection from "@/components/AllProductsSection"
 import CategoriesSection from "@/components/CategoriesSection"
 import LatestProducts from "@/components/LatestProducts"
 import BestSelling from "@/components/BestSelling"
@@ -11,6 +12,7 @@ export default function HomePage() {
     <>
       <Hero />
       <StoresSection />
+      <AllProductsSection />
       <CategoriesSection />
       <LatestProducts />
       <BestSelling />

@@ -19,11 +19,16 @@ export default function Product() {
         scrollTo(0, 0)
     }, [productId, dispatch]);
 
+    // Prevent hydration mismatch by not rendering until client-side
+    if (typeof window === 'undefined') {
+        return <div className="mx-6 max-w-7xl mx-auto mt-8">Loading...</div>;
+    }
+
     if (loading) {
         return <div className="mx-6 max-w-7xl mx-auto mt-8">Loading...</div>;
     }
 
-    if (!product && !loading) {
+    if (!product) {
         return <div className="mx-6 max-w-7xl mx-auto mt-8">Product not found</div>;
     }
 

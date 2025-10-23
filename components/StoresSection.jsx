@@ -1,6 +1,7 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
@@ -67,7 +68,13 @@ const StoresSection = () => {
     return (
         <div className="py-16 bg-gray-50">
             <div className="max-w-7xl mx-auto px-6">
-                <h2 className="text-3xl font-bold text-center text-slate-800 mb-8">Our Stores</h2>
+                <div className="flex flex-col items-center mb-8">
+                    <h2 className="text-3xl font-bold text-slate-800">Our Stores</h2>
+                    <Link href="/all-products" className="flex items-center gap-2 text-sm text-slate-600 mt-2">
+                        <p className="max-w-lg text-center">Browse all products from our stores</p>
+                        <button className="text-green-500 flex items-center gap-1">View all products <ArrowRight size={14} /></button>
+                    </Link>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                     {stores.map((store) => (
                         <Link key={store.id} href={`/shop/${store.username}`} className="group">

@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast"
 import { updateProduct, fetchProduct } from "@/lib/features/product/productSlice"
 import { fetchCategories } from "@/lib/features/category/categorySlice"
 import { useParams, useRouter } from "next/navigation"
+import ColorPicker from "@/components/ColorPicker"
 
 export default function StoreEditProduct() {
     const { productId } = useParams()
@@ -26,6 +27,7 @@ export default function StoreEditProduct() {
         price: 0,
         category: "",
         inStock: true,
+        colors: [],
     })
     const [loading, setLoading] = useState(false)
 
@@ -45,6 +47,7 @@ export default function StoreEditProduct() {
                 price: product.price || 0,
                 category: product.category?.id || product.category || "",
                 inStock: product.inStock ?? true,
+                colors: product.colors || [],
             })
             setExistingImages(product.images || [])
         }
@@ -144,6 +147,11 @@ export default function StoreEditProduct() {
             // Add new images
             images.forEach(image => {
                 formData.append('images', image)
+            })
+
+            // Add colors as array
+            productInfo.colors.forEach(color => {
+                formData.append('colors', color)
             })
 
             const result = await dispatch(updateProduct({ id: productId, productData: formData })).unwrap()
@@ -278,6 +286,11 @@ export default function StoreEditProduct() {
                 />
                 <span>In Stock</span>
             </label>
+
+            <ColorPicker
+                colors={productInfo.colors}
+                onChange={(colors) => setProductInfo({ ...productInfo, colors })}
+            />
 
             <br />
 

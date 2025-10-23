@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const Counter = ({ productId }) => {
 
-    const { cartItems, loading } = useSelector(state => state.cart);
+    const { cartItems } = useSelector(state => state.cart);
     const { token } = useSelector(state => state.auth);
 
     const dispatch = useDispatch();
@@ -19,7 +19,9 @@ const Counter = ({ productId }) => {
             if (token && Object.keys(cartItems).length === 0) {
                 await dispatch(createCart()).unwrap();
             }
-            const newQuantity = (cartItems[productId] || 0) + 1;
+            const currentItem = cartItems[productId];
+            const currentQuantity = typeof currentItem === 'object' ? currentItem.quantity : currentItem || 0;
+            const newQuantity = currentQuantity + 1;
             await dispatch(updateCart({ productId, quantity: newQuantity })).unwrap();
         } catch (error) {
             console.error('Failed to add to cart:', error);
@@ -32,7 +34,8 @@ const Counter = ({ productId }) => {
         if (isUpdating) return; // Prevent multiple clicks
         setIsUpdating(true);
         try {
-            const currentQuantity = cartItems[productId] || 0;
+            const currentItem = cartItems[productId];
+            const currentQuantity = typeof currentItem === 'object' ? currentItem.quantity : currentItem || 0;
             const newQuantity = currentQuantity > 1 ? currentQuantity - 1 : 0;
             await dispatch(updateCart({ productId, quantity: newQuantity })).unwrap();
         } catch (error) {
@@ -45,7 +48,7 @@ const Counter = ({ productId }) => {
     return (
         <div className="inline-flex items-center gap-1 sm:gap-3 px-3 py-1 rounded border border-slate-200 max-sm:text-sm text-slate-600">
             <button onClick={removeFromCartHandler} disabled={isUpdating} className="p-1 select-none disabled:opacity-50">-</button>
-            <p className="p-1">{cartItems[productId]}</p>
+            <p className="p-1">{typeof cartItems[productId] === 'object' ? cartItems[productId].quantity : cartItems[productId]}</p>
             <button onClick={addToCartHandler} disabled={isUpdating} className="p-1 select-none disabled:opacity-50">+</button>
         </div>
     )
