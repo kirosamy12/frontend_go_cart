@@ -2,7 +2,7 @@
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProduct } from "@/lib/features/product/productSlice";
 
@@ -23,7 +23,7 @@ export default function Product() {
         return <div className="mx-6 max-w-7xl mx-auto mt-8">Loading...</div>;
     }
 
-    if (!product) {
+    if (!product && !loading) {
         return <div className="mx-6 max-w-7xl mx-auto mt-8">Product not found</div>;
     }
 

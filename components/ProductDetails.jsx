@@ -13,7 +13,7 @@ const ProductDetails = ({ product }) => {
     const productId = product?.id || product?._id;
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
-    const cartItems = useSelector(state => state.cart.cartItems);
+    const cartItems = useSelector(state => state.cart.items || {});
     const dispatch = useDispatch();
 
     const router = useRouter()

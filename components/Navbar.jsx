@@ -70,13 +70,13 @@ const Navbar = () => {
                         <Link href="/cart" className="relative flex items-center gap-2 text-slate-600 hover:text-green-600 transition-colors">
                             <ShoppingCart size={18} />
                             Cart
-                            <button className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full">{cartCount}</button>
+                            <span className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full flex items-center justify-center">{cartCount || 0}</span>
                         </Link>
 
                         <Link href="/wishlist" className="relative flex items-center gap-2 text-slate-600 hover:text-green-600 transition-colors">
                             <Heart size={18} />
                             Wishlist
-                            <button className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full">{wishlistCount}</button>
+                            <span className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full flex items-center justify-center">{wishlistCount || 0}</span>
                         </Link>
 
                         {isAuthenticated ? (
