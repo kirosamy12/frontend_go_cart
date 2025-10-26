@@ -12,7 +12,8 @@ import {
   TrendingUpIcon,
   PlusIcon,
   ArrowUpIcon,
-  ArrowDownIcon
+  ArrowDownIcon,
+  HomeIcon
 } from "lucide-react"
 import Link from "next/link"
 import OrdersAreaChart from "@/components/OrdersAreaChart"
@@ -128,6 +129,13 @@ const ModernStoreDashboard = () => {
             <p className="text-slate-600 mt-2">Here's what's happening with your store today.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            <button 
+              onClick={() => router.push('/')}
+              className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg transition-colors font-medium"
+            >
+              <HomeIcon size={18} />
+              Back to Home
+            </button>
             <button 
               onClick={() => router.push('/store/add-product')}
               className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
@@ -306,12 +314,12 @@ const ModernStoreDashboard = () => {
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-slate-800">{review.user.name}</p>
                       <div className="flex items-center gap-1">
-                        {Array(5).fill('').map((_, starIndex) => (
+                        {[1, 2, 3, 4, 5].map((starIndex) => (
                           <StarIcon 
                             key={starIndex} 
                             size={14} 
                             className="text-yellow-400" 
-                            fill={review.rating >= starIndex + 1 ? "#fbbf24" : "transparent"} 
+                            fill={review.rating >= starIndex ? "#fbbf24" : "transparent"} 
                           />
                         ))}
                       </div>

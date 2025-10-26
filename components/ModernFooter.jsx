@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FacebookIcon, InstagramIcon, TwitterIcon, LinkedinIcon, MailIcon, PhoneIcon, MapPinIcon } from 'lucide-react';
+import { FacebookIcon, InstagramIcon, TwitterIcon, LinkedinIcon, MailIcon, PhoneIcon, MapPinIcon, StoreIcon } from 'lucide-react';
 
 const ModernFooter = () => {
     const linkSections = [
@@ -22,12 +22,12 @@ const ModernFooter = () => {
             ]
         },
         {
-            title: "SUPPORT",
+            title: "SELL",
             links: [
-                { text: "Help Center", path: '/help' },
-                { text: "Shipping Info", path: '/shipping' },
-                { text: "Returns", path: '/returns' },
-                { text: "Privacy Policy", path: '/privacy' },
+                { text: "Create Your Store", path: '/create-store' },
+                { text: "Seller Dashboard", path: '/store' },
+                { text: "Seller Resources", path: '/seller-resources' },
+                { text: "Success Stories", path: '/seller-stories' },
             ]
         },
         {
@@ -89,6 +89,26 @@ const ModernFooter = () => {
                             </ul>
                         </div>
                     ))}
+                </div>
+                
+                {/* Create Store CTA Section */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 mb-12 text-center">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="flex justify-center mb-4">
+                            <StoreIcon size={32} className="text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-3">Start Selling on ShopVerse</h3>
+                        <p className="text-indigo-100 mb-6">
+                            Join thousands of sellers who are growing their businesses with ShopVerse. 
+                            Create your store today and reach millions of customers.
+                        </p>
+                        <Link 
+                            href="/create-store" 
+                            className="px-6 py-3 bg-white text-indigo-600 font-medium rounded-lg hover:bg-slate-100 transition shadow-lg inline-block"
+                        >
+                            Create Your Store
+                        </Link>
+                    </div>
                 </div>
                 
                 <div className="border-t border-slate-800 py-8 text-sm">
