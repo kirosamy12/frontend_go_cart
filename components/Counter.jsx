@@ -1,5 +1,5 @@
 'use client'
-import { addToCartAsync, updateCart, createCart } from "@/lib/features/cart/cartSlice";
+import { addToCartAsync, updateCart, createCart, removeFromCartAsync } from "@/lib/features/cart/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
 
@@ -34,10 +34,7 @@ const Counter = ({ productId }) => {
         if (isUpdating) return; // Prevent multiple clicks
         setIsUpdating(true);
         try {
-            const currentItem = cartItems[productId];
-            const currentQuantity = typeof currentItem === 'object' ? currentItem.quantity : currentItem || 0;
-            const newQuantity = currentQuantity > 1 ? currentQuantity - 1 : 0;
-            await dispatch(updateCart({ productId, quantity: newQuantity })).unwrap();
+            await dispatch(removeFromCartAsync(productId)).unwrap();
         } catch (error) {
             console.error('Failed to remove from cart:', error);
         } finally {

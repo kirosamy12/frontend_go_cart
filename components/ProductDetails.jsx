@@ -26,11 +26,16 @@ const ProductDetails = ({ product }) => {
         if (product?.images && product.images.length > 0) {
             setMainImage(product.images[0]);
         }
-        // Set default selected color if colors are available
-        if (product?.colors && product.colors.length > 0 && !selectedColor) {
+    }, [product]);
+
+    // Set default selected color when product changes
+    useEffect(() => {
+        if (product?.colors && product.colors.length > 0) {
             setSelectedColor(product.colors[0]);
+        } else {
+            setSelectedColor('');
         }
-    }, [product, selectedColor]);
+    }, [product]);
 
     const addToCartHandler = () => {
         if (productId) {

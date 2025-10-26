@@ -15,7 +15,7 @@ export default function Dashboard() {
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
     const router = useRouter()
     const dispatch = useDispatch()
-
+   
     const { token, isAuthenticated, user } = useSelector(state => state.auth)
     const { list: products, loading: productsLoading, error: productsError } = useSelector(state => state.product)
     const { storeOrders, loading: ordersLoading, error: ordersError } = useSelector(state => state.orders)

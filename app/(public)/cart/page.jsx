@@ -2,7 +2,7 @@
 import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
-import { deleteItemFromCart, updateCart, createCart, getCart } from "@/lib/features/cart/cartSlice";
+import { deleteItemFromCart, updateCart, createCart, getCart, removeFromCartAsync } from "@/lib/features/cart/cartSlice";
 import { fetchProducts } from "@/lib/features/product/productSlice";
 import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
@@ -43,8 +43,12 @@ export default function Cart() {
         setCartArray(cartArray);
     }
 
-    const handleDeleteItemFromCart = (productId) => {
-        dispatch(deleteItemFromCart({ productId }))
+    const handleDeleteItemFromCart = async (productId) => {
+        try {
+            await dispatch(removeFromCartAsync(productId)).unwrap();
+        } catch (error) {
+            console.error('Failed to remove item from cart:', error);
+        }
     }
 
     // Fetch products if not loaded
