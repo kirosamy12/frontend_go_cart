@@ -2,8 +2,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-    title: "GoCart. - Admin",
-    description: "GoCart. - Admin",
+    title: "ShopVerse. - Admin",
+    description: "ShopVerse. - Admin",
 };
 
 export default function RootAdminLayout({ children }) {

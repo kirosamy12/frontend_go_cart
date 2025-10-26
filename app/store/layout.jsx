@@ -1,17 +1,17 @@
-import StoreLayout from "@/components/store/StoreLayout";
+import ModernStoreLayout from "@/components/ModernStoreLayout";
 
 export const metadata = {
-    title: "GoCart. - Store Dashboard",
-    description: "GoCart. - Store Dashboard",
+    title: "ShopVerse. - Store Dashboard",
+    description: "ShopVerse. - Store Dashboard",
 };
 
 export default function RootAdminLayout({ children }) {
 
     return (
         <>
-            <StoreLayout>
+            <ModernStoreLayout>
                 {children}
-            </StoreLayout>
+            </ModernStoreLayout>
         </>
     );
 }

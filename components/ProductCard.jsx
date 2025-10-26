@@ -30,42 +30,99 @@ const ProductCard = ({ product }) => {
     }
 
     return (
-        <Link href={`/product/${product?.id || product?._id}`} className=' group max-xl:mx-auto relative'>
-            <div className='bg-gradient-to-br from-gray-50 to-gray-100 h-40 sm:w-60 sm:h-68 rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300'>
-                <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto object-contain group-hover:scale-110 transition-transform duration-300' src={product?.images && product.images[0] ? product.images[0] : '/assets/product_img1.png'} alt={product?.name || 'Product'} />
-                <button onClick={handleWishlistToggle} className={`absolute top-2 right-2 p-1.5 rounded-full transition-all shadow-sm ${isInWishlist ? 'text-red-500 bg-white' : 'text-gray-400 bg-white hover:text-red-500'}`}>
-                    <HeartIcon size={16} fill={isInWishlist ? 'currentColor' : 'none'} />
-                </button>
-                {product?.images && product.images.length > 1 && (
-                    <div className="absolute bottom-2 left-2 flex gap-1">
-                        {product.images.slice(0, 3).map((_, index) => (
-                            <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
-                        ))}
-                        {product.images.length > 3 && (
-                            <span className="text-xs text-white bg-black bg-opacity-50 px-1 rounded">+{product.images.length - 3}</span>
-                        )}
+        <Link href={`/product/${product?.id || product?._id}`} className='group relative'>
+            <div className='bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col'>
+                {/* Product image container */}
+                <div className='relative h-48 flex items-center justify-center p-4'>
+                    <Image 
+                        width={500} 
+                        height={500} 
+                        className='max-h-40 w-auto object-contain group-hover:scale-105 transition-transform duration-300' 
+                        src={product?.images && product.images[0] ? product.images[0] : '/assets/product_img1.png'} 
+                        alt={product?.name || 'Product'} 
+                    />
+                    
+                    {/* Wishlist button */}
+                    <button 
+                        onClick={handleWishlistToggle} 
+                        className={`absolute top-3 right-3 p-2 rounded-full transition-all shadow-sm ${
+                            isInWishlist 
+                                ? 'text-red-500 bg-white' 
+                                : 'text-gray-400 bg-white hover:text-red-500'
+                        }`}
+                    >
+                        <HeartIcon size={18} fill={isInWishlist ? 'currentColor' : 'none'} />
+                    </button>
+                    
+                    {/* Image indicators */}
+                    {product?.images && product.images.length > 1 && (
+                        <div className="absolute bottom-3 left-3 flex gap-1">
+                            {product.images.slice(0, 3).map((_, index) => (
+                                <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+                            ))}
+                            {product.images.length > 3 && (
+                                <span className="text-xs text-white bg-black bg-opacity-50 px-1.5 py-0.5 rounded-full">
+                                    +{product.images.length - 3}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    
+                    {/* Sale badge */}
+                    {product?.mrp && product?.price && product.mrp > product.price && (
+                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+                        </div>
+                    )}
+                </div>
+                
+                {/* Product info */}
+                <div className='p-4 flex-1 flex flex-col'>
+                    <div className='flex-1'>
+                        <h3 className="font-semibold text-slate-800 truncate mb-1 group-hover:text-indigo-600 transition-colors">
+                            {product?.name || 'Product Name'}
+                        </h3>
+                        
+                        {/* Rating */}
+                        <div className='flex items-center gap-1 mb-2'>
+                            <div className='flex'>
+                                {Array(5).fill('').map((_, index) => (
+                                    <StarIcon 
+                                        key={index} 
+                                        size={14} 
+                                        className='text-transparent' 
+                                        fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} 
+                                    />
+                                ))}
+                            </div>
+                            <span className='text-xs text-slate-500 ml-1'>
+                                {product?.rating?.length || 0} reviews
+                            </span>
+                        </div>
                     </div>
-                )}
-            </div>
-            <div className='flex justify-between gap-3 text-sm text-slate-800 pt-2 max-w-60'>
-                <div>
-                    <p className="font-medium truncate">{product?.name || 'Product Name'}</p>
-                    <div className='flex'>
-                        {Array(5).fill('').map((_, index) => (
-                            <StarIcon key={index} size={14} className='text-transparent mt-0.5' fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
-                        ))}
+                    
+                    {/* Price and stock status */}
+                    <div className='flex items-center justify-between mt-2'>
+                        <div>
+                            <p className="font-bold text-slate-800">
+                                {currency}{product?.price || '0'}
+                                {product?.mrp && product.mrp > product.price && (
+                                    <span className="text-sm text-slate-500 line-through font-normal ml-2">
+                                        {currency}{product.mrp}
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            product?.inStock
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                        }`}>
+                            {product?.inStock ? 'In Stock' : 'Out of Stock'}
+                        </span>
                     </div>
                 </div>
-                <p className="font-semibold">{currency}{product?.price || '0'}</p>
-            </div>
-            <div className="mt-1 text-xs font-semibold">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    product.inStock
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                }`}>
-                    {product.inStock ? 'In Stock' : 'Out of Stock'}
-                </span>
             </div>
         </Link>
     )

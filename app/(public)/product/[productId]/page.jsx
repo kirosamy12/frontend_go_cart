@@ -1,10 +1,11 @@
 'use client'
+import ModernProductDetails from "@/components/ModernProductDetails";
 import ProductDescription from "@/components/ProductDescription";
-import ProductDetails from "@/components/ProductDetails";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProduct } from "@/lib/features/product/productSlice";
+import Link from "next/link";
 
 export default function Product() {
 
@@ -21,30 +22,31 @@ export default function Product() {
 
     // Prevent hydration mismatch by not rendering until client-side
     if (typeof window === 'undefined') {
-        return <div className="mx-6 max-w-7xl mx-auto mt-8">Loading...</div>;
+        return <div className="max-w-7xl mx-auto mt-8 px-4 sm:px-6">Loading...</div>;
     }
 
     if (loading) {
-        return <div className="mx-6 max-w-7xl mx-auto mt-8">Loading...</div>;
+        return <div className="max-w-7xl mx-auto mt-8 px-4 sm:px-6">Loading...</div>;
     }
 
     if (!product) {
-        return <div className="mx-6 max-w-7xl mx-auto mt-8">Product not found</div>;
+        return <div className="max-w-7xl mx-auto mt-8 px-4 sm:px-6">Product not found</div>;
     }
 
     return (
-        <div className="mx-6">
-            <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto">
+            {/* Breadcrumbs */}
+            <div className="text-gray-600 text-sm mt-6 mb-4 px-4 sm:px-6">
+                <Link href="/" className="text-indigo-600 hover:underline">Home</Link> / 
+                <Link href="/shop" className="text-indigo-600 hover:underline"> Products</Link> / 
+                <span> {product?.category?.name || 'Category'}</span>
+            </div>
 
-                {/* Breadcrumbs */}
-                <div className="  text-gray-600 text-sm mt-8 mb-5">
-                    Home / Products / {product?.category?.name || 'Category'}
-                </div>
+            {/* Product Details */}
+            <ModernProductDetails product={product} />
 
-                {/* Product Details */}
-                <ProductDetails product={product} />
-
-                {/* Description & Reviews */}
+            {/* Description & Reviews */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
                 <ProductDescription product={product} />
             </div>
         </div>

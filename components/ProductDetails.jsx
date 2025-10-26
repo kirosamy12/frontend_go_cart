@@ -1,7 +1,7 @@
 'use client'
 
 import { addToCartAsync } from "@/lib/features/cart/cartSlice";
-import { StarIcon, TagIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react";
+import { StarIcon, TagIcon, TruckIcon, ShieldCheckIcon, RotateCcwIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -49,85 +49,172 @@ const ProductDetails = ({ product }) => {
 
     const averageRating = product?.rating && product.rating.length > 0 ? product.rating.reduce((acc, item) => acc + item.rating, 0) / product.rating.length : 0;
 
-    return (
-        <div className="flex max-lg:flex-col gap-12">
-            <div className="flex max-sm:flex-col-reverse gap-3">
-                <div className="flex sm:flex-col gap-3">
-                    {product?.images && product.images.map((image, index) => (
-                        <div key={index} onClick={() => setMainImage(product.images[index])} className="bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer border-2 border-transparent hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md">
-                            <Image src={image || '/placeholder-image.jpg'} className="group-hover:scale-105 transition-transform duration-200 rounded" alt="" width={45} height={45} />
-                        </div>
-                    ))}
-                </div>
-                <div className="flex justify-center items-center h-100 sm:size-113 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-                    <Image src={mainImage || '/placeholder-image.jpg'} alt={product?.name || 'Product'} width={250} height={250} className="object-contain hover:scale-105 transition-transform duration-300" />
-                </div>
-            </div>
-            <div className="flex-1">
-                <h1 className="text-3xl font-semibold text-slate-800">{product?.name || 'Product Name'}</h1>
-                <div className='flex items-center mt-2'>
-                    {Array(5).fill('').map((_, index) => (
-                        <StarIcon key={index} size={14} className='text-transparent mt-0.5' fill={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"} />
-                    ))}
-                    <p className="text-sm ml-3 text-slate-500">{product?.rating && product.rating.length > 0 ? product.rating.length : 0} Reviews</p>
-                </div>
-                <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
-                    <p> {currency}{product?.price || '0'} </p>
-                    <p className="text-xl text-slate-500 line-through">{currency}{product?.mrp || '0'}</p>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500">
-                    <TagIcon size={14} />
-                    <p>Save {product?.mrp && product?.price ? ((product.mrp - product.price) / product.mrp * 100).toFixed(0) : 0}% right now</p>
-                </div>
+    // Calculate discount percentage
+    const discountPercentage = product?.mrp && product?.price ? 
+        Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
 
-                {/* Color Selection */}
-                {product?.colors && product.colors.length > 0 && (
-                    <div className="mt-6">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Select Color</p>
-                        <div className="flex gap-2 flex-wrap">
-                            {product.colors.map((color, index) => (
-                                <div
-                                    key={index}
-                                    onClick={() => setSelectedColor(color)}
-                                    className={`w-8 h-8 rounded-full border-2 cursor-pointer transition-all ${
-                                        selectedColor === color
-                                            ? 'border-blue-500 ring-2 ring-blue-200'
-                                            : 'border-gray-300 hover:border-gray-500'
-                                    }`}
-                                    style={{ backgroundColor: color }}
-                                    title={color}
-                                />
-                            ))}
+    return (
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+            <div className="flex flex-col lg:w-1/2">
+                <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden aspect-square flex items-center justify-center shadow-sm">
+                    <Image 
+                        src={mainImage || '/placeholder-image.jpg'} 
+                        alt={product?.name || 'Product'} 
+                        fill
+                        className="object-contain p-8 hover:scale-105 transition-transform duration-300" 
+                    />
+                    {discountPercentage > 0 && (
+                        <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                            {discountPercentage}% OFF
                         </div>
-                        {selectedColor && (
-                            <p className="text-xs text-slate-500 mt-2">Selected: <span className="font-medium">{selectedColor}</span></p>
-                        )}
+                    )}
+                </div>
+                
+                {product?.images && product.images.length > 1 && (
+                    <div className="flex gap-3 mt-4 overflow-x-auto pb-2 hide-scrollbar">
+                        {product.images.map((image, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setMainImage(product.images[index])}
+                                className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                                    mainImage === image 
+                                        ? 'border-indigo-500 ring-2 ring-indigo-200' 
+                                        : 'border-slate-200 hover:border-slate-300'
+                                }`}
+                            >
+                                <Image 
+                                    src={image || '/placeholder-image.jpg'} 
+                                    alt="" 
+                                    fill
+                                    className="object-cover" 
+                                />
+                            </button>
+                        ))}
                     </div>
                 )}
-                <div className="flex items-end gap-5 mt-10">
-                    {
-                        cartItems[productId] && (
-                            <div className="flex flex-col gap-3">
+            </div>
+            
+            <div className="lg:w-1/2">
+                <div className="flex flex-col gap-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-800">{product?.name || 'Product Name'}</h1>
+                        <div className='flex items-center mt-2'>
+                            {Array(5).fill('').map((_, index) => (
+                                <StarIcon 
+                                    key={index} 
+                                    size={16} 
+                                    className='text-transparent' 
+                                    fill={averageRating >= index + 1 ? "#fbbf24" : "#D1D5DB"} 
+                                />
+                            ))}
+                            <p className="text-sm ml-2 text-slate-600">
+                                {product?.rating && product.rating.length > 0 ? product.rating.length : 0} Reviews
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <p className="text-3xl font-bold text-slate-800">
+                            {currency}{product?.price || '0'}
+                        </p>
+                        {product?.mrp && product.mrp > product.price && (
+                            <p className="text-xl text-slate-500 line-through">
+                                {currency}{product?.mrp || '0'}
+                            </p>
+                        )}
+                        {discountPercentage > 0 && (
+                            <span className="bg-red-100 text-red-700 text-sm font-bold px-2 py-1 rounded">
+                                Save {discountPercentage}%
+                            </span>
+                        )}
+                    </div>
+                    
+                    <p className="text-slate-600">
+                        {product?.description || 'Product description not available.'}
+                    </p>
+                    
+                    {/* Color Selection */}
+                    {product?.colors && product.colors.length > 0 && (
+                        <div>
+                            <p className="text-sm font-medium text-slate-700 mb-3">Select Color</p>
+                            <div className="flex gap-3 flex-wrap">
+                                {product.colors.map((color, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setSelectedColor(color)}
+                                        className={`w-10 h-10 rounded-full border-2 cursor-pointer transition-all flex items-center justify-center ${
+                                            selectedColor === color
+                                                ? 'border-indigo-500 ring-2 ring-indigo-200'
+                                                : 'border-slate-300 hover:border-slate-500'
+                                        }`}
+                                        style={{ backgroundColor: color }}
+                                        title={color}
+                                    >
+                                        {selectedColor === color && (
+                                            <div className="w-4 h-4 rounded-full bg-white"></div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            {selectedColor && (
+                                <p className="text-sm text-slate-500 mt-2">
+                                    Selected: <span className="font-medium">{selectedColor}</span>
+                                </p>
+                            )}
+                        </div>
+                    )}
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        {cartItems[productId] ? (
+                            <div className="flex flex-col gap-3 w-full sm:w-auto">
                                 <p className="text-lg text-slate-800 font-semibold">Quantity</p>
                                 <Counter productId={productId} />
                             </div>
-                        )
-                    }
-                    <button
-                        onClick={() => !cartItems[productId] ? addToCartHandler() : router.push('/cart')}
-                        disabled={product?.colors && product.colors.length > 0 && !selectedColor}
-                        className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {!cartItems[productId] ? 'Add to Cart' : 'View Cart'}
-                    </button>
+                        ) : (
+                            <button
+                                onClick={addToCartHandler}
+                                disabled={product?.colors && product.colors.length > 0 && !selectedColor}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Add to Cart
+                            </button>
+                        )}
+                        
+                        <button
+                            onClick={() => cartItems[productId] ? router.push('/cart') : addToCartHandler()}
+                            className="flex-1 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all"
+                        >
+                            {cartItems[productId] ? 'View Cart' : 'Buy Now'}
+                        </button>
+                    </div>
+                    
+                    {/* Product Info Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <TruckIcon size={20} className="text-slate-600" />
+                            <div>
+                                <p className="text-xs text-slate-500">Free Shipping</p>
+                                <p className="text-sm font-medium">On orders over $50</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <RotateCcwIcon size={20} className="text-slate-600" />
+                            <div>
+                                <p className="text-xs text-slate-500">Easy Returns</p>
+                                <p className="text-sm font-medium">30-day guarantee</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <ShieldCheckIcon size={20} className="text-slate-600" />
+                            <div>
+                                <p className="text-xs text-slate-500">Secure Payment</p>
+                                <p className="text-sm font-medium">100% protected</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <hr className="border-gray-300 my-5" />
-                <div className="flex flex-col gap-4 text-slate-500">
-                    <p className="flex gap-3"> <EarthIcon className="text-slate-400" /> Free shipping worldwide </p>
-                    <p className="flex gap-3"> <CreditCardIcon className="text-slate-400" /> 100% Secured Payment </p>
-                    <p className="flex gap-3"> <UserIcon className="text-slate-400" /> Trusted by top brands </p>
-                </div>
-
             </div>
         </div>
     )

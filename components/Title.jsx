@@ -6,12 +6,18 @@ import React from 'react'
 const Title = ({ title, description, visibleButton = true, href = '' }) => {
 
     return (
-        <div className='flex flex-col items-center'>
-            <h2 className='text-2xl font-semibold text-slate-800'>{title}</h2>
-            <Link href={href} className='flex items-center gap-5 text-sm text-slate-600 mt-2'>
-                <p className='max-w-lg text-center'>{description}</p>
-                {visibleButton && <button className='text-green-500 flex items-center gap-1'>View more <ArrowRight size={14} /></button>}
-            </Link>
+        <div className='flex flex-col items-center text-center'>
+            <h2 className='text-3xl font-bold text-slate-800 mb-3'>{title}</h2>
+            <p className='text-slate-600 max-w-2xl mb-6'>{description}</p>
+            {visibleButton && (
+                <Link 
+                    href={href} 
+                    className='inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium group'
+                >
+                    View more
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+            )}
         </div>
     )
 }
