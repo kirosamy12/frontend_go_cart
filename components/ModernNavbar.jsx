@@ -170,6 +170,7 @@ const ModernNavbar = () => {
                                 placeholder="Search products..." 
                                 value={search} 
                                 onChange={(e) => setSearch(e.target.value)} 
+                                autoComplete="off"
                             />
                         </form>
 

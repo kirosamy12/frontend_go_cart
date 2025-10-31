@@ -2,7 +2,7 @@
 import ModernProductDetails from "@/components/ModernProductDetails";
 import ProductDescription from "@/components/ProductDescription";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProduct } from "@/lib/features/product/productSlice";
 import Link from "next/link";
@@ -12,8 +12,10 @@ export default function Product() {
     const { productId } = useParams();
     const dispatch = useDispatch();
     const { currentProduct: product, loading } = useSelector(state => state.product);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
         if (productId) {
             dispatch(fetchProduct(productId));
         }
@@ -21,7 +23,7 @@ export default function Product() {
     }, [productId, dispatch]);
 
     // Prevent hydration mismatch by not rendering until client-side
-    if (typeof window === 'undefined') {
+    if (!isClient) {
         return <div className="max-w-7xl mx-auto mt-8 px-4 sm:px-6">Loading...</div>;
     }
 

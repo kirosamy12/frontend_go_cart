@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from "next/navigation"
-import { HomeIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, FolderPlusIcon, FolderIcon } from "lucide-react"
+import { HomeIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, FolderPlusIcon, FolderIcon, BarChart3Icon, PieChartIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
@@ -12,6 +12,8 @@ const AdminSidebar = () => {
 
     const sidebarLinks = [
         { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3Icon },
+        { name: 'Advanced Analytics', href: '/admin/advanced-analytics', icon: PieChartIcon }, // Added this line
         { name: 'Users', href: '/admin/users', icon: ShieldCheckIcon },
         { name: 'Stores', href: '/admin/stores', icon: StoreIcon },
         { name: 'Approve Store', href: '/admin/approve', icon: ShieldCheckIcon },

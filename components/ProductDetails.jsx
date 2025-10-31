@@ -20,6 +20,7 @@ const ProductDetails = ({ product }) => {
 
     const [mainImage, setMainImage] = useState('/placeholder-image.jpg');
     const [selectedColor, setSelectedColor] = useState('');
+    const [selectedSize, setSelectedSize] = useState(''); // Add state for selected size
 
     // Set main image when product changes
     useEffect(() => {
@@ -35,6 +36,13 @@ const ProductDetails = ({ product }) => {
         } else {
             setSelectedColor('');
         }
+        
+        // Set default selected size when product changes
+        if (product?.sizes && product.sizes.length > 0) {
+            setSelectedSize(product.sizes[0]);
+        } else {
+            setSelectedSize('');
+        }
     }, [product]);
 
     const addToCartHandler = () => {
@@ -42,7 +50,8 @@ const ProductDetails = ({ product }) => {
             dispatch(addToCartAsync({
                 productId,
                 quantity: 1,
-                selectedColor: selectedColor || null
+                selectedColor: selectedColor || null,
+                selectedSize: selectedSize || null // Include selected size
             }))
         }
     }
@@ -164,6 +173,33 @@ const ProductDetails = ({ product }) => {
                         </div>
                     )}
                     
+                    {/* Size Selection */}
+                    {product?.sizes && product.sizes.length > 0 && (
+                        <div>
+                            <p className="text-sm font-medium text-slate-700 mb-3">Select Size</p>
+                            <div className="flex gap-3 flex-wrap">
+                                {product.sizes.map((size, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`px-4 py-2 border rounded-lg font-medium transition-all ${
+                                            selectedSize === size
+                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                                : 'border-slate-300 hover:border-slate-500 text-slate-700'
+                                        }`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                            {selectedSize && (
+                                <p className="text-sm text-slate-500 mt-2">
+                                    Selected: <span className="font-medium">{selectedSize}</span>
+                                </p>
+                            )}
+                        </div>
+                    )}
+                    
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         {cartItems[productId] ? (
                             <div className="flex flex-col gap-3 w-full sm:w-auto">
@@ -173,7 +209,8 @@ const ProductDetails = ({ product }) => {
                         ) : (
                             <button
                                 onClick={addToCartHandler}
-                                disabled={product?.colors && product.colors.length > 0 && !selectedColor}
+                                disabled={(product?.colors && product.colors.length > 0 && !selectedColor) || 
+                                         (product?.sizes && product.sizes.length > 0 && !selectedSize)}
                                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Add to Cart

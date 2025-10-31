@@ -17,10 +17,15 @@ export default function StoreOrders() {
     }
 
     const handleUpdateOrderStatus = async (orderId, status) => {
+        console.log('Updating order status:', { orderId, status });
+        if (!orderId) {
+            console.error('Cannot update order status: orderId is undefined');
+            return;
+        }
         try {
-            await dispatch(updateOrderStatus({ orderId, status })).unwrap()
+            await dispatch(updateOrderStatus({ orderId, status })).unwrap();
         } catch (error) {
-            console.error('Failed to update order status:', error)
+            console.error('Failed to update order status:', error);
             // You might want to show a toast notification here
         }
     }
@@ -66,7 +71,7 @@ export default function StoreOrders() {
     }
 
     return (
-        <>
+        <div>
             <h1 className="text-3xl text-slate-800 font-semibold mb-5">Store <span className="text-blue-600">Orders</span></h1>
             {storeOrders.length === 0 ? (
                 <p>No orders found</p>
@@ -75,44 +80,53 @@ export default function StoreOrders() {
                     <table className="w-full text-sm text-left text-gray-600">
                         <thead className="bg-gray-50 text-gray-700 text-xs uppercase tracking-wider">
                             <tr>
-                                {["Sr. No.", "Customer", "Total", "Payment", "Coupon", "Status", "Date"].map((heading, i) => (
-                                    <th key={i} className="px-4 py-3">{heading}</th>
+                                {['Sr. No.', 'Customer', 'Total', 'Payment', 'Status', 'Items', 'Date'].map((heading) => (
+                                    <th key={heading} className="px-4 py-3">{heading}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {storeOrders.map((order, index) => (
                                 <tr
-                                    key={order.id || order._id}
+                                    key={order.id || order._id || order.orderId || (order._id && order._id._id) || index}
                                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                                     onClick={() => openModal(order)}
                                 >
                                     <td className="pl-6 text-green-600" >
                                         {index + 1}
                                     </td>
-                                    <td className="px-4 py-3">{order.customer?.name}</td>
-                                    <td className="px-4 py-3 font-medium text-slate-800">${order.total}</td>
-                                    <td className="px-4 py-3">{order.paymentMethod}</td>
                                     <td className="px-4 py-3">
-                                        {order.isCouponUsed ? (
-                                            <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                                                {order.coupon?.code}
-                                            </span>
-                                        ) : (
-                                            "—"
-                                        )}
+                                        <p>{order.customer?.name}</p>
+                                        <p className="text-xs text-slate-500">{order.customer?.email}</p>
+                                    </td>
+                                    <td className="px-4 py-3 font-medium text-slate-800">${order.total}</td>
+                                    <td className="px-4 py-3">
+                                        <p>{order.paymentMethod}</p>
+                                        <p className="text-xs text-slate-500">{order.isPaid ? 'Paid' : 'Not Paid'}</p>
                                     </td>
                                     <td className="px-4 py-3" onClick={(e) => { e.stopPropagation() }}>
                                         <select
                                             value={order.status}
-                                            onChange={e => handleUpdateOrderStatus(order.id || order._id, e.target.value)}
+                                            onChange={e => {
+                                                // Try to get the order ID from various possible properties
+                                                const orderId = order.id || order._id || order.orderId || (order._id && order._id._id);
+                                                console.log('Order ID:', orderId);
+                                                if (!orderId) {
+                                                    console.error('Order ID is undefined:', order);
+                                                    return;
+                                                }
+                                                handleUpdateOrderStatus(orderId, e.target.value);
+                                            }}
                                             className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
                                         >
-                                            <option value="ORDER_PLACED">ORDER_PLACED</option>
-                                            <option value="PROCESSING">PROCESSING</option>
-                                            <option value="SHIPPED">SHIPPED</option>
-                                            <option value="DELIVERED">DELIVERED</option>
+                                            <option key="ORDER_PLACED" value="ORDER_PLACED">ORDER_PLACED</option>
+                                            <option key="PROCESSING" value="PROCESSING">PROCESSING</option>
+                                            <option key="SHIPPED" value="SHIPPED">SHIPPED</option>
+                                            <option key="DELIVERED" value="DELIVERED">DELIVERED</option>
                                         </select>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {order.orderItems?.length || 0} item(s)
                                     </td>
                                     <td className="px-4 py-3 text-gray-500">
                                         {new Date(order.createdAt).toLocaleString()}
@@ -129,7 +143,7 @@ export default function StoreOrders() {
                 <div onClick={closeModal} className="fixed inset-0 flex items-center justify-center bg-black/50 text-slate-700 text-sm backdrop-blur-xs z-50" >
                     <div onClick={e => e.stopPropagation()} className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-semibold text-slate-900 mb-6 text-center">
-                            Order Details - #{selectedOrder.id || selectedOrder._id}
+                            Order Details - #{selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id) || 'N/A'}
                         </h2>
 
                         {/* Order Summary */}
@@ -137,7 +151,7 @@ export default function StoreOrders() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                     <p className="text-slate-500 text-xs uppercase">Order ID</p>
-                                    <p className="font-medium">{selectedOrder.id || selectedOrder._id}</p>
+                                    <p className="font-medium">{selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id) || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-slate-500 text-xs uppercase">Status</p>
@@ -145,6 +159,7 @@ export default function StoreOrders() {
                                         selectedOrder.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
                                         selectedOrder.status === 'SHIPPED' ? 'bg-yellow-100 text-yellow-700' :
                                         selectedOrder.status === 'PROCESSING' ? 'bg-blue-100 text-blue-700' :
+                                        selectedOrder.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
                                         'bg-gray-100 text-gray-700'
                                     }`}>
                                         {selectedOrder.status}
@@ -158,6 +173,26 @@ export default function StoreOrders() {
                                     <p className="text-slate-500 text-xs uppercase">Payment Method</p>
                                     <p className="font-medium">{selectedOrder.paymentMethod}</p>
                                 </div>
+                                <div>
+                                    <p className="text-slate-500 text-xs uppercase">Payment Status</p>
+                                    <p className="font-medium">{selectedOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-slate-500 text-xs uppercase">Coupon Used</p>
+                                    <p className="font-medium">{selectedOrder.isCouponUsed ? 'Yes' : 'No'}</p>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <p className="text-slate-500 text-xs uppercase">Order Date</p>
+                                    <p className="font-medium">
+                                        {(() => {
+                                            try {
+                                                return new Date(selectedOrder.createdAt).toLocaleString();
+                                            } catch (error) {
+                                                return 'Invalid date';
+                                            }
+                                        })()}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -166,19 +201,51 @@ export default function StoreOrders() {
                             <h3 className="font-semibold mb-2">Customer Information</h3>
                             <p><strong>Name:</strong> {selectedOrder.customer?.name}</p>
                             <p><strong>Email:</strong> {selectedOrder.customer?.email}</p>
-                            <p><strong>Phone:</strong> {selectedOrder.customer?.phone}</p>
+                            <p><strong>Phone:</strong> {selectedOrder.customer?.phone || 'N/A'}</p>
                         </div>
+
+                        {/* Shipping Address */}
+                        {selectedOrder.address && (
+                            <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                                <h3 className="font-semibold mb-2">Shipping Address</h3>
+                                <p><strong>Street:</strong> {selectedOrder.address.street}</p>
+                                <p><strong>City:</strong> {selectedOrder.address.city}</p>
+                                <p><strong>State:</strong> {selectedOrder.address.state}</p>
+                                <p><strong>Country:</strong> {selectedOrder.address.country}</p>
+                                <p><strong>Phone:</strong> {selectedOrder.address.phone}</p>
+                            </div>
+                        )}
 
                         {/* Order Items */}
                         <div className="mb-6 p-4 bg-slate-50 rounded-lg">
                             <h3 className="font-semibold mb-2">Order Items</h3>
-                            <ul className="list-disc list-inside">
-                                {selectedOrder.items?.map(item => (
-                                    <li key={item.id}>
-                                        {item.name} - Quantity: {item.quantity} - Price: ${item.price}
-                                    </li>
+                            <div className="space-y-4">
+                                {selectedOrder.orderItems?.map(item => (
+                                    <div key={item.product.id} className="border border-slate-200 rounded-lg p-4">
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                            <div>
+                                                <p className="font-medium text-slate-800">{item.product.name}</p>
+                                                <p className="text-sm text-slate-600">Product ID: {item.product.id}</p>
+                                            </div>
+                                            <div className="mt-2 md:mt-0">
+                                                <p className="font-medium text-slate-800">${item.price} × {item.quantity} = ${item.price * item.quantity}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {item.selectedColor && (
+                                                <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                                                    Color: <span style={{display: 'inline-block', width: '12px', height: '12px', backgroundColor: item.selectedColor, border: '1px solid #ccc', marginLeft: '4px', verticalAlign: 'middle'}}></span> {item.selectedColor}
+                                                </span>
+                                            )}
+                                            {item.selectedSize && (
+                                                <span className="text-xs px-2 py-1 bg-slate-100 rounded">
+                                                    Size: {item.selectedSize}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
 
                         <button onClick={closeModal} className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
@@ -188,8 +255,8 @@ export default function StoreOrders() {
 
             {/* Order Tracking Modal */}
             {isTrackingOpen && selectedOrder && (
-                <OrderTracking orderId={selectedOrder.id} onClose={closeTracking} />
+                <OrderTracking orderId={selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id)} onClose={closeTracking} />
             )}
-        </>
+        </div>
     )
 }

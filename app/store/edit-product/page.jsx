@@ -28,6 +28,8 @@ export default function StoreEditProduct() {
         inStock: true,
     })
     const [loading, setLoading] = useState(false)
+    const [sizes, setSizes] = useState([]) // Add state for sizes
+    const [newSize, setNewSize] = useState("") // Add state for new size input
 
     useEffect(() => {
         if (productId) {
@@ -47,6 +49,7 @@ export default function StoreEditProduct() {
                 inStock: product.inStock ?? true,
             })
             setExistingImages(product.images || [])
+            setSizes(product.sizes || []) // Initialize sizes from product data
         }
     }, [product])
 
@@ -56,6 +59,24 @@ export default function StoreEditProduct() {
             ...productInfo,
             [name]: type === 'checkbox' ? checked : value
         })
+    }
+
+    // Add function to handle size input
+    const handleSizeChange = (e) => {
+        setNewSize(e.target.value);
+    }
+
+    // Add function to add a new size
+    const addSize = () => {
+        if (newSize.trim() && !sizes.includes(newSize.trim())) {
+            setSizes([...sizes, newSize.trim()]);
+            setNewSize("");
+        }
+    }
+
+    // Add function to remove a size
+    const removeSize = (sizeToRemove) => {
+        setSizes(sizes.filter(size => size !== sizeToRemove));
     }
 
     const handleImageUpload = (e) => {
@@ -128,6 +149,11 @@ export default function StoreEditProduct() {
             formData.append('price', productInfo.price.toString())
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock.toString())
+
+            // Add sizes as array
+            sizes.forEach(size => {
+                formData.append('sizes', size)
+            })
 
             // Add existing images that haven't been replaced
             existingImages.forEach((image, index) => {
@@ -236,22 +262,22 @@ export default function StoreEditProduct() {
                 )}
             </div>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="" className="flex flex-col gap-2 my-6">
                 Name
                 <input type="text" name="name" onChange={onChangeHandler} value={productInfo.name} placeholder="Enter product name" className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded" required />
             </label>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="" className="flex flex-col gap-2 my-6">
                 Description
                 <textarea name="description" onChange={onChangeHandler} value={productInfo.description} placeholder="Enter product description" rows={5} className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
             </label>
 
             <div className="flex gap-5">
-                <label htmlFor="" className="flex flex-col gap-2 ">
+                <label htmlFor="" className="flex flex-col gap-2">
                     Actual Price ($)
                     <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
                 </label>
-                <label htmlFor="" className="flex flex-col gap-2 ">
+                <label htmlFor="" className="flex flex-col gap-2">
                     Offer Price ($)
                     <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
                 </label>
@@ -278,6 +304,48 @@ export default function StoreEditProduct() {
                 />
                 <span>In Stock</span>
             </label>
+
+            {/* Size Selection */}
+            <div className="my-6">
+                <label className="flex flex-col gap-2">
+                    Sizes
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={newSize}
+                            onChange={handleSizeChange}
+                            placeholder="Enter size (e.g., S, M, L, XL)"
+                            className="flex-1 p-2 px-4 outline-none border border-slate-200 rounded"
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
+                        />
+                        <button
+                            type="button"
+                            onClick={addSize}
+                            className="bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-900 transition"
+                        >
+                            Add
+                        </button>
+                    </div>
+                </label>
+                
+                {/* Display added sizes */}
+                {sizes.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {sizes.map((size, index) => (
+                            <div key={index} className="flex items-center bg-slate-100 text-slate-800 px-3 py-1 rounded-full">
+                                <span>{size}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => removeSize(size)}
+                                    className="ml-2 text-slate-800 hover:text-slate-900 font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <br />
 

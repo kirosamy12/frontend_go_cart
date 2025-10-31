@@ -174,7 +174,13 @@ export default function OrderTracking({ orderId, onClose }) {
                                     <p className="text-slate-600 text-sm">{step.description}</p>
                                     {step.timestamp && (
                                         <p className="text-slate-500 text-xs mt-1">
-                                            {new Date(step.timestamp).toLocaleString()}
+                                            {(() => {
+                                                try {
+                                                    return new Date(step.timestamp).toLocaleString();
+                                                } catch (error) {
+                                                    return 'Invalid date';
+                                                }
+                                            })()}
                                         </p>
                                     )}
                                 </div>
@@ -203,12 +209,18 @@ export default function OrderTracking({ orderId, onClose }) {
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                         <h3 className="font-semibold mb-2 text-blue-800">Estimated Delivery</h3>
                         <p className="text-blue-700">
-                            {new Date(orderTracking.estimatedDelivery).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
+                            {(() => {
+                                try {
+                                    return new Date(orderTracking.estimatedDelivery).toLocaleDateString('en-US', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    });
+                                } catch (error) {
+                                    return 'Invalid date';
+                                }
+                            })()}
                         </p>
                     </div>
                 )}

@@ -273,7 +273,15 @@ export default function Profile() {
                                             <p><strong>Order ID:</strong> {order.id}</p>
                                             <p><strong>Total:</strong> ${order.total}</p>
                                             <p><strong>Status:</strong> {order.status}</p>
-                                            <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</p>
+                                            <p><strong>Date:</strong> 
+                                                {(() => {
+                                                    try {
+                                                        return new Date(order.createdAt).toLocaleDateString();
+                                                    } catch (error) {
+                                                        return 'Invalid date';
+                                                    }
+                                                })()}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>

@@ -74,6 +74,22 @@ const ProductCard = ({ product }) => {
                             {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
                         </div>
                     )}
+                    
+                    {/* Size indicators */}
+                    {product?.sizes && product.sizes.length > 0 && (
+                        <div className="absolute bottom-3 right-3 flex gap-1">
+                            {product.sizes.slice(0, 3).map((size, index) => (
+                                <div key={index} className="w-5 h-5 bg-white text-xs flex items-center justify-center rounded-full border border-slate-200">
+                                    {size}
+                                </div>
+                            ))}
+                            {product.sizes.length > 3 && (
+                                <div className="w-5 h-5 bg-white text-xs flex items-center justify-center rounded-full border border-slate-200">
+                                    +{product.sizes.length - 3}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 
                 {/* Product info */}
@@ -98,6 +114,38 @@ const ProductCard = ({ product }) => {
                             <span className='text-xs text-slate-500 ml-1'>
                                 {product?.rating?.length || 0} reviews
                             </span>
+                        </div>
+                        
+                        {/* Colors and Sizes */}
+                        <div className="flex flex-wrap gap-1 mb-2">
+                            {product?.colors && product.colors.length > 0 && (
+                                <div className="flex gap-1">
+                                    {product.colors.slice(0, 3).map((color, index) => (
+                                        <div 
+                                            key={index} 
+                                            className="w-3 h-3 rounded-full border border-slate-300"
+                                            style={{ backgroundColor: color }}
+                                            title={color}
+                                        ></div>
+                                    ))}
+                                    {product.colors.length > 3 && (
+                                        <span className="text-xs text-slate-500">+{product.colors.length - 3}</span>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {product?.sizes && product.sizes.length > 0 && (
+                                <div className="flex gap-1">
+                                    {product.sizes.slice(0, 3).map((size, index) => (
+                                        <div key={index} className="text-xs px-1.5 py-0.5 bg-slate-100 rounded">
+                                            {size}
+                                        </div>
+                                    ))}
+                                    {product.sizes.length > 3 && (
+                                        <span className="text-xs text-slate-500">+{product.sizes.length - 3}</span>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                     

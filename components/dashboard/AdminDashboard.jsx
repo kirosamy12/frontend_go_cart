@@ -1,15 +1,16 @@
 'use client'
 import { useSelector } from "react-redux";
-import { useDashboardData } from "@/lib/hooks/useDashboardData";
+import { useAnalyticsData, useSalesAnalytics } from "@/lib/hooks/useAnalyticsData";
 import Card from "./Card";
 import { StoreIcon, UsersIcon, ShoppingBagIcon, DollarSignIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 const AdminDashboard = () => {
   const { user } = useSelector(state => state.auth);
-  const { data, loading, error } = useDashboardData("admin");
+  const { data, loading, error } = useAnalyticsData("admin");
+  const { data: salesData, loading: salesLoading, error: salesError } = useSalesAnalytics();
 
-  if (loading) {
+  if (loading || salesLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -17,21 +18,21 @@ const AdminDashboard = () => {
     );
   }
 
-  if (error) {
+  if (error || salesError) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Error loading dashboard: {error}</p>
+        <p className="text-red-600">Error loading dashboard: {error || salesError}</p>
       </div>
     );
   }
 
   // Prepare chart data
-  const monthlyRevenueData = data?.monthlyRevenue?.map(item => ({
-    month: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][item._id - 1],
-    revenue: item.total
+  const monthlyRevenueData = salesData?.revenueByMonth?.map(item => ({
+    month: item.month,
+    revenue: item.revenue
   })) || [];
 
-  const storeRevenuesData = data?.storeRevenues?.map(item => ({
+  const storeRevenuesData = salesData?.revenueByStore?.map(item => ({
     name: item.storeName,
     revenue: item.revenue
   })) || [];
@@ -48,32 +49,32 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card
           title="Total Stores"
-          value={data?.totalStores || 0}
+          value={data?.metrics?.totalStores || 0}
           icon={StoreIcon}
           color="blue"
         />
         <Card
           title="Total Users"
-          value={data?.totalUsers || 0}
+          value={data?.metrics?.totalUsers || 0}
           icon={UsersIcon}
           color="green"
         />
         <Card
           title="Total Orders"
-          value={data?.totalOrders || 0}
+          value={data?.metrics?.totalOrders || 0}
           icon={ShoppingBagIcon}
           color="purple"
         />
         <Card
           title="Total Revenue"
-          value={`$${data?.totalRevenue?.toLocaleString() || 0}`}
+          value={`$${data?.metrics?.totalRevenue?.toLocaleString() || 0}`}
           icon={DollarSignIcon}
           color="orange"
         />
       </div>
 
       {/* Top Store */}
-      {data?.topStore && (
+      {data?.topStores?.[0] && (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
           <div className="flex items-center gap-3 mb-4">
             <TrendingUpIcon size={24} className="text-slate-600 dark:text-slate-400" />
@@ -81,11 +82,11 @@ const AdminDashboard = () => {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topStore.storeName}</h3>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topStores[0].name}</h3>
               <p className="text-slate-600 dark:text-slate-400">Highest revenue this month</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-green-600">${data.topStore.revenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-600">${data.topStores[0].revenue?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>

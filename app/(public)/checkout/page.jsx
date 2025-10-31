@@ -31,13 +31,14 @@ export default function Checkout() {
     for (const [key, value] of Object.entries(cartItems)) {
       const product = products.find(product => (product.id || product._id) === key)
       if (product) {
-        // Check if cartItems[key] is an object with quantity and selectedColor
-        const itemData = typeof value === 'object' ? value : { quantity: value, selectedColor: null }
+        // Check if cartItems[key] is an object with quantity, selectedColor, and selectedSize
+        const itemData = typeof value === 'object' ? value : { quantity: value, selectedColor: null, selectedSize: null }
         const itemTotal = product.price * itemData.quantity
         cartArray.push({
           ...product,
           quantity: itemData.quantity,
           selectedColor: itemData.selectedColor,
+          selectedSize: itemData.selectedSize, // Include selected size
           itemTotal
         })
         totalPrice += itemTotal
@@ -108,6 +109,9 @@ export default function Checkout() {
                             <p className="text-sm text-slate-500">{item.category?.name}</p>
                             {item.selectedColor && (
                               <p className="text-xs text-indigo-600 mt-1">Color: {item.selectedColor}</p>
+                            )}
+                            {item.selectedSize && (
+                              <p className="text-xs text-indigo-600 mt-1">Size: {item.selectedSize}</p>
                             )}
                           </div>
                         </div>

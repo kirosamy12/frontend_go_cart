@@ -4,17 +4,28 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 export default function OrdersAreaChart({ allOrders }) {
 
     // Group orders by date
-    const ordersPerDay = allOrders.reduce((acc, order) => {
-        const date = new Date(order.createdAt).toISOString().split('T')[0] // format: YYYY-MM-DD
-        acc[date] = (acc[date] || 0) + 1
-        return acc
-    }, {})
+    const ordersPerDay = (allOrders || []).reduce((acc, order) => {
+        // Validate that order and createdAt exist
+        if (!order || !order.createdAt) {
+            return acc;
+        }
+        
+        // Create date and check if it's valid
+        const dateObj = new Date(order.createdAt);
+        if (isNaN(dateObj.getTime())) {
+            return acc; // Skip invalid dates
+        }
+        
+        const date = dateObj.toISOString().split('T')[0]; // format: YYYY-MM-DD
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+    }, {});
 
     // Convert to array for Recharts
     const chartData = Object.entries(ordersPerDay).map(([date, count]) => ({
         date,
         orders: count
-    }))
+    }));
 
     return (
         <div className="w-full max-w-4xl h-[300px] text-xs">
@@ -29,5 +40,5 @@ export default function OrdersAreaChart({ allOrders }) {
                 </AreaChart>
             </ResponsiveContainer>
         </div>
-    )
+    );
 }

@@ -60,16 +60,29 @@ export default function ModernSignInForm() {
 
                 // Decode token to get user data
                 const decodedToken = decodeToken(data.token)
+                console.log("Decoded Token:", decodedToken);
 
                 if (decodedToken) {
+                    // Extract storeId from various possible locations
+                    const storeId = decodedToken.storeId || 
+                                   decodedToken.store?.id || 
+                                   decodedToken.store?._id || 
+                                   decodedToken.store ||
+                                   null;
+                    
+                    console.log("Extracted storeId:", storeId);
+                    
                     // Create user object from token data
                     const userFromToken = {
                         id: decodedToken.id || decodedToken.userId,
                         name: decodedToken.name,
                         email: decodedToken.email,
                         role: decodedToken.role || 'user',
+                        storeId: storeId,
                         ...decodedToken
                     }
+                    
+                    console.log("User object to save:", userFromToken);
 
                     dispatch(login({ user: userFromToken, token: data.token }))
 

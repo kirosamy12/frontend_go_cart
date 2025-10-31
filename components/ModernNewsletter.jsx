@@ -19,8 +19,9 @@ const ModernNewsletter = () => {
                         className='flex-1 px-5 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50' 
                         type="email" 
                         placeholder='Enter your email address' 
+                        suppressHydrationWarning
                     />
-                    <button className='bg-white text-indigo-600 font-medium px-6 py-3 rounded-lg hover:bg-slate-100 transition-all duration-300 shadow-lg hover:shadow-xl'>
+                    <button className='bg-white text-indigo-600 font-medium px-6 py-3 rounded-lg hover:bg-slate-100 transition-all duration-300 shadow-lg hover:shadow-xl' suppressHydrationWarning>
                         Subscribe
                     </button>
                 </div>

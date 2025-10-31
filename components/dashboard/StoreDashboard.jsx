@@ -1,14 +1,16 @@
 'use client'
 import { useSelector } from "react-redux";
-import { useDashboardData } from "@/lib/hooks/useDashboardData";
+import { useAnalyticsData } from "@/lib/hooks/useAnalyticsData";
 import Card from "./Card";
 import { ShoppingBagIcon, DollarSignIcon, PackageIcon, TrendingUpIcon, StarIcon } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const StoreDashboard = () => {
   const { user } = useSelector(state => state.auth);
-  const storeId = user?.storeId; // Assuming storeId is available in user object
-  const { data, loading, error } = useDashboardData("store", storeId);
+  console.log("User data in StoreDashboard:", user); // Debug log
+  const storeId = user?.storeId || user?.store?.id || user?.store?._id;
+  console.log("Using storeId:", storeId); // Debug log
+  const { data, loading, error } = useAnalyticsData("store", storeId);
 
   if (loading) {
     return (
@@ -27,9 +29,9 @@ const StoreDashboard = () => {
   }
 
   // Prepare chart data
-  const monthlySalesData = data?.monthlySales?.map(item => ({
-    month: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][item._id - 1],
-    sales: item.total
+  const monthlySalesData = data?.ordersByDay?.map(item => ({
+    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    sales: item.count
   })) || [];
 
   return (
@@ -44,32 +46,32 @@ const StoreDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card
           title="Total Orders"
-          value={data?.totalOrders || 0}
+          value={data?.metrics?.totalOrders || 0}
           icon={ShoppingBagIcon}
           color="blue"
         />
         <Card
           title="Total Revenue"
-          value={`$${data?.totalRevenue?.toLocaleString() || 0}`}
+          value={`$${data?.metrics?.totalRevenue?.toLocaleString() || 0}`}
           icon={DollarSignIcon}
           color="green"
         />
         <Card
           title="Total Products"
-          value={data?.totalProducts || 0}
+          value={data?.metrics?.totalProducts || 0}
           icon={PackageIcon}
           color="purple"
         />
         <Card
           title="Top Product Sales"
-          value={data?.topProduct?.totalSold || 0}
+          value={data?.topProducts?.[0]?.sold || 0}
           icon={StarIcon}
           color="orange"
         />
       </div>
 
       {/* Top Product */}
-      {data?.topProduct && (
+      {data?.topProducts?.[0] && (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
           <div className="flex items-center gap-3 mb-4">
             <StarIcon size={24} className="text-slate-600 dark:text-slate-400" />
@@ -77,29 +79,29 @@ const StoreDashboard = () => {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topProduct.productName}</h3>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topProducts[0].name}</h3>
               <p className="text-slate-600 dark:text-slate-400">Best performing product</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-orange-600">{data.topProduct.totalSold} sold</p>
+              <p className="text-2xl font-bold text-orange-600">{data.topProducts[0].sold} sold</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Monthly Sales Chart */}
+      {/* Sales Chart */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <div className="flex items-center gap-3 mb-6">
           <TrendingUpIcon size={24} className="text-slate-600 dark:text-slate-400" />
-          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Monthly Sales</h2>
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Sales Trend</h2>
         </div>
         {monthlySalesData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={monthlySalesData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
+              <XAxis dataKey="date" />
               <YAxis />
-              <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']} />
+              <Tooltip formatter={(value) => [value, 'Orders']} />
               <Line type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={3} />
             </LineChart>
           </ResponsiveContainer>

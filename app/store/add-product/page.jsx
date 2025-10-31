@@ -23,7 +23,11 @@ export default function StoreAddProduct() {
         category: "",
         inStock: true,
         colors: [],
+        sizes: [], // Add sizes array
     })
+    
+    const [newSize, setNewSize] = useState(""); // Add state for new size input
+
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -54,6 +58,30 @@ export default function StoreAddProduct() {
     const removeImage = (index) => {
         const newImages = images.filter((_, i) => i !== index)
         setImages(newImages)
+    }
+
+    // Add function to handle size input
+    const handleSizeChange = (e) => {
+        setNewSize(e.target.value);
+    }
+
+    // Add function to add a new size
+    const addSize = () => {
+        if (newSize.trim() && !productInfo.sizes.includes(newSize.trim())) {
+            setProductInfo({
+                ...productInfo,
+                sizes: [...productInfo.sizes, newSize.trim()]
+            });
+            setNewSize("");
+        }
+    }
+
+    // Add function to remove a size
+    const removeSize = (sizeToRemove) => {
+        setProductInfo({
+            ...productInfo,
+            sizes: productInfo.sizes.filter(size => size !== sizeToRemove)
+        });
     }
 
     const onSubmitHandler = async (e) => {
@@ -94,6 +122,11 @@ export default function StoreAddProduct() {
                 formData.append('colors', color)
             })
 
+            // Add sizes as array
+            productInfo.sizes.forEach(size => {
+                formData.append('sizes', size)
+            })
+
             // Add images as array
             images.forEach(image => {
                 formData.append('images', image)
@@ -101,7 +134,7 @@ export default function StoreAddProduct() {
 
             const result = await dispatch(addProduct(formData)).unwrap()
             toast.success("Product added successfully!")
-            setProductInfo({ name: "", description: "", mrp: 0, price: 0, category: "", inStock: true, colors: [] })
+            setProductInfo({ name: "", description: "", mrp: 0, price: 0, category: "", inStock: true, colors: [], sizes: [] })
             setImages([])
         } catch (error) {
             console.error('Product addition error:', error)
@@ -200,6 +233,48 @@ export default function StoreAddProduct() {
                 colors={productInfo.colors}
                 onChange={(colors) => setProductInfo({ ...productInfo, colors })}
             />
+
+            {/* Size Selection */}
+            <div className="my-6">
+                <label className="flex flex-col gap-2">
+                    Sizes
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={newSize}
+                            onChange={handleSizeChange}
+                            placeholder="Enter size (e.g., S, M, L, XL)"
+                            className="flex-1 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
+                        />
+                        <button
+                            type="button"
+                            onClick={addSize}
+                            className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition"
+                        >
+                            Add
+                        </button>
+                    </div>
+                </label>
+                
+                {/* Display added sizes */}
+                {productInfo.sizes.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {productInfo.sizes.map((size, index) => (
+                            <div key={index} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                                <span>{size}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => removeSize(size)}
+                                    className="ml-2 text-blue-800 hover:text-blue-900 font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <br />
 

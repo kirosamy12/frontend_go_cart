@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { fetchStoreProducts } from "@/lib/features/product/productSlice"
-import { getStoreOrders } from "@/lib/features/orders/ordersSlice"
+import { useAnalyticsData } from "@/lib/hooks/useAnalyticsData";
 import {
   ShoppingBasketIcon,
   CircleDollarSignIcon,
@@ -24,64 +23,37 @@ const ModernStoreDashboard = () => {
   const dispatch = useDispatch()
  
   const { token, isAuthenticated, user } = useSelector(state => state.auth)
-  const { list: products, loading: productsLoading } = useSelector(state => state.product)
-  const { storeOrders, loading: ordersLoading } = useSelector(state => state.orders)
-
-  const [dashboardData, setDashboardData] = useState({
-    totalProducts: 0,
-    totalEarnings: 0,
-    totalOrders: 0,
-    ratings: [],
-    recentOrders: []
-  })
+  console.log("ModernStoreDashboard - User data:", user);
+  const storeId = user?.storeId || user?.store?.id || user?.store?._id;
+  console.log("ModernStoreDashboard - StoreId:", storeId);
+  const { data, loading, error } = useAnalyticsData("store");
 
   const [timeRange, setTimeRange] = useState('7d') // 7d, 30d, 90d
 
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      dispatch(fetchStoreProducts())
-      dispatch(getStoreOrders())
-    }
-  }, [dispatch, isAuthenticated, token])
-
-  useEffect(() => {
-    if (products.length > 0 && storeOrders.length > 0) {
-      // Calculate dashboard data
-      const totalProducts = products.length
-      const totalEarnings = products.reduce((sum, product) => sum + (product.price * (product.sold || 0)), 0)
-      const totalOrders = products.reduce((sum, product) => sum + (product.sold || 0), 0)
-      
-      // Get recent orders (last 5)
-      const recentOrders = [...storeOrders]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5)
-
-      // Mock ratings data
-      const mockRatings = products.slice(0, 3).map((product, index) => ({
-        id: product.id,
-        user: {
-          name: `Customer ${index + 1}`,
-          image: '/placeholder-image.jpg'
-        },
-        product: product,
-        rating: Math.floor(Math.random() * 5) + 1,
-        review: `Great product! ${product.description?.substring(0, 50)}...`,
-        createdAt: new Date(Date.now() - index * 86400000).toISOString() // Different dates
-      }))
-
-      setDashboardData({
-        totalProducts,
-        totalEarnings,
-        totalOrders,
-        ratings: mockRatings,
-        recentOrders
-      })
-    }
-  }, [products, storeOrders])
+  // Dashboard data derived from analytics
+  const dashboardData = {
+    totalProducts: data?.metrics?.totalProducts || 0,
+    totalEarnings: data?.metrics?.totalRevenue || 0,
+    totalOrders: data?.metrics?.totalOrders || 0,
+    recentOrders: data?.recentOrders || [],
+    pendingOrders: data?.pendingOrders || [],
+    ratings: (data?.metrics?.topProduct ? [data.metrics.topProduct] : []).map((product, index) => ({
+      id: product._id || product.id || `product-${index}`,
+      user: {
+        name: `Customer ${index + 1}`,
+        image: '/placeholder-image.jpg'
+      },
+      product: product,
+      rating: 5, // Using 5 stars for top product
+      review: `Great product! ${product.productName || product.name || 'Product'}`,
+      createdAt: new Date(Date.now() - index * 86400000).toISOString()
+    })) || []
+  };
 
   // Dashboard cards data
   const dashboardCardsData = [
     { 
+      id: 'total-products',
       title: 'Total Products', 
       value: dashboardData.totalProducts, 
       icon: ShoppingBasketIcon,
@@ -89,6 +61,7 @@ const ModernStoreDashboard = () => {
       trend: 'up'
     },
     { 
+      id: 'total-earnings',
       title: 'Total Earnings', 
       value: `${currency}${dashboardData.totalEarnings.toLocaleString()}`, 
       icon: CircleDollarSignIcon,
@@ -96,6 +69,7 @@ const ModernStoreDashboard = () => {
       trend: 'up'
     },
     { 
+      id: 'total-orders',
       title: 'Total Orders', 
       value: dashboardData.totalOrders, 
       icon: PackageIcon,
@@ -103,20 +77,65 @@ const ModernStoreDashboard = () => {
       trend: 'up'
     },
     { 
-      title: 'Avg. Rating', 
-      value: '4.7', 
-      icon: StarIcon,
-      change: '+0.2',
-      trend: 'up'
+      id: 'pending-orders',
+      title: 'Pending Orders', 
+      value: data?.pendingOrders?.length || 0, 
+      icon: PackageIcon,
+      change: '0%',
+      trend: 'neutral'
     },
   ]
 
-  if (productsLoading || ordersLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 max-w-2xl mx-auto">
+          <div className="mb-4">
+            <svg className="w-16 h-16 text-red-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Dashboard</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-yellow-800 font-medium mb-2">Troubleshooting Tips:</p>
+            <ul className="text-left text-sm text-yellow-700 space-y-1 max-w-md mx-auto">
+              <li key="tip1">• Check your internet connection</li>
+              <li key="tip2">• Verify the API server is running</li>
+              <li key="tip3">• Try refreshing the page</li>
+              <li key="tip4">• Check if you have created a store</li>
+              <li key="tip5">• Visit <a href="/debug-store" className="underline font-medium">/debug-store</a> to see your account details</li>
+            </ul>
+          </div>
+          
+          <div className="flex gap-3 justify-center mt-6">
+            <button 
+              key="debug-info-button"
+              onClick={() => router.push('/debug-store')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+            >
+              Debug Info
+            </button>
+            <button 
+              key="refresh-page-button"
+              onClick={() => window.location.reload()}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -130,6 +149,7 @@ const ModernStoreDashboard = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button 
+              key="home-button"
               onClick={() => router.push('/')}
               className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg transition-colors font-medium"
             >
@@ -137,6 +157,7 @@ const ModernStoreDashboard = () => {
               Back to Home
             </button>
             <button 
+              key="add-product-button"
               onClick={() => router.push('/store/add-product')}
               className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
             >
@@ -144,6 +165,7 @@ const ModernStoreDashboard = () => {
               Add Product
             </button>
             <button 
+              key="view-orders-button"
               onClick={() => router.push('/store/orders')}
               className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-lg transition-colors font-medium border border-slate-200"
             >
@@ -156,8 +178,8 @@ const ModernStoreDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dashboardCardsData.map((card, index) => (
-          <div key={index} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        {dashboardCardsData.map((card) => (
+          <div key={card.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-1">{card.title}</p>
@@ -170,11 +192,15 @@ const ModernStoreDashboard = () => {
             <div className="flex items-center mt-4">
               {card.trend === 'up' ? (
                 <ArrowUpIcon size={16} className="text-green-500" />
-              ) : (
+              ) : card.trend === 'down' ? (
                 <ArrowDownIcon size={16} className="text-red-500" />
+              ) : (
+                <div className="w-4 h-4"></div> // Empty spacer for neutral trend
               )}
               <span className={`text-sm font-medium ml-1 ${
-                card.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                card.trend === 'up' ? 'text-green-600' : 
+                card.trend === 'down' ? 'text-red-600' : 
+                'text-slate-500'
               }`}>
                 {card.change}
               </span>
@@ -199,17 +225,17 @@ const ModernStoreDashboard = () => {
                 onChange={(e) => setTimeRange(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-3 py-1.5"
               >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
+                <option key="7d" value="7d">Last 7 days</option>
+                <option key="30d" value="30d">Last 30 days</option>
+                <option key="90d" value="90d">Last 90 days</option>
               </select>
             </div>
           </div>
           
-          {storeOrders.length > 0 ? (
-            <OrdersAreaChart allOrders={storeOrders} />
+          {data?.salesAnalytics?.length > 0 ? (
+            <OrdersAreaChart allOrders={data.salesAnalytics} />
           ) : (
-            <div className="h-80 flex items-center justify-center text-slate-500">
+            <div key="no-orders-data" className="h-80 flex items-center justify-center text-slate-500">
               <div className="text-center">
                 <TrendingUpIcon size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No orders data available yet</p>
@@ -224,29 +250,29 @@ const ModernStoreDashboard = () => {
           <h2 className="text-xl font-semibold text-slate-800 mb-6">Recent Activity</h2>
           
           <div className="space-y-4">
-            {dashboardData.recentOrders.slice(0, 5).map((order) => (
-              <div key={order.id} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+            {data?.recentActivity?.slice(0, 5).map((activity, index) => (
+              <div key={activity.id || activity._id || `activity-${index}`} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
                 <div className="bg-green-100 p-2 rounded-lg">
                   <PackageIcon size={16} className="text-green-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-slate-800">Order #{order.id?.substring(0, 8)}</p>
-                  <p className="text-sm text-slate-600">{new Date(order.createdAt).toLocaleDateString()}</p>
-                  <p className="text-sm font-medium text-slate-800 mt-1">{currency}{order.total}</p>
+                  <p className="font-medium text-slate-800">Order #{(activity.id || activity._id || `activity-${index}`).substring(0, 8)}</p>
+                  <p className="text-sm text-slate-600">{new Date(activity.updatedAt || activity.createdAt).toLocaleDateString()}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                  order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
-                  order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
+                  activity.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+                  activity.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
+                  activity.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
+                  activity.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
                   'bg-gray-100 text-gray-700'
                 }`}>
-                  {order.status}
+                  {activity.status}
                 </span>
               </div>
             ))}
             
-            {dashboardData.recentOrders.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+            {(data?.recentActivity?.length === 0 || !data?.recentActivity) && (
+              <div key="no-recent-activity" className="text-center py-8 text-slate-500">
                 <PackageIcon size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No recent activity</p>
               </div>
@@ -261,24 +287,29 @@ const ModernStoreDashboard = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-slate-800">Recent Orders</h2>
-            <Link href="/store/orders" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+            <Link key="view-all-orders-link" href="/store/orders" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
               View All
             </Link>
           </div>
           
           <div className="space-y-4">
-            {dashboardData.recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
+            {data?.recentOrders?.map((order, index) => (
+              <div key={order.id || order._id || (order.id && order.id.id) || `order-${index}` || `order-${Math.random()}`} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
                 <div>
-                  <p className="font-medium text-slate-800">Order #{order.id?.substring(0, 8)}</p>
+                  <p className="font-medium text-slate-800">Order #{(order.id || order._id || (order.id && order.id.id) || order.orderId || `order-${index}` || '').substring(0, 8)}</p>
                   <p className="text-sm text-slate-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  {order.customer && (
+                    <p className="text-xs text-slate-500 mt-1">Customer: {order.customer.name}</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-slate-800">{currency}{order.total}</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  <p className="text-xs text-slate-500 mt-1">{order.paymentMethod}</p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium mt-1 inline-block ${
                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
                     order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
                     order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
+                    order.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
                     'bg-gray-100 text-gray-700'
                   }`}>
                     {order.status}
@@ -287,8 +318,8 @@ const ModernStoreDashboard = () => {
               </div>
             ))}
             
-            {dashboardData.recentOrders.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+            {(data?.recentOrders?.length === 0 || !data?.recentOrders) && (
+              <div key="no-orders" className="text-center py-8 text-slate-500">
                 <PackageIcon size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No orders yet</p>
               </div>
@@ -300,7 +331,7 @@ const ModernStoreDashboard = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-slate-800">Customer Reviews</h2>
-            <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+            <button key="view-all-reviews-button" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
               View All
             </button>
           </div>
@@ -316,7 +347,7 @@ const ModernStoreDashboard = () => {
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((starIndex) => (
                           <StarIcon 
-                            key={starIndex} 
+                            key={`star-${review.id}-${starIndex}`} 
                             size={14} 
                             className="text-yellow-400" 
                             fill={review.rating >= starIndex ? "#fbbf24" : "transparent"} 
@@ -332,7 +363,7 @@ const ModernStoreDashboard = () => {
             ))}
             
             {dashboardData.ratings.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+              <div key="no-reviews" className="text-center py-8 text-slate-500">
                 <StarIcon size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No reviews yet</p>
               </div>

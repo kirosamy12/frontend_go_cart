@@ -85,7 +85,15 @@ const OrderDetailsPage = () => {
                                 <div className="flex items-center gap-2">
                                     <CalendarIcon size={16} className="text-slate-400" />
                                     <span className="text-slate-600">Order Date:</span>
-                                    <span className="font-medium">{new Date(currentOrder.createdAt).toLocaleDateString()}</span>
+                                    <span className="font-medium">
+                                        {(() => {
+                                            try {
+                                                return new Date(currentOrder.createdAt).toLocaleDateString();
+                                            } catch (error) {
+                                                return 'Invalid date';
+                                            }
+                                        })()}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <CreditCardIcon size={16} className="text-slate-400" />

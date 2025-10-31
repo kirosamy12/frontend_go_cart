@@ -189,6 +189,9 @@ const ModernCart = () => {
                             {item.selectedColor && (
                               <p className="text-xs text-indigo-600 mt-1">Color: {item.selectedColor}</p>
                             )}
+                            {item.selectedSize && (
+                              <p className="text-xs text-indigo-600 mt-1">Size: {item.selectedSize}</p>
+                            )}
                           </div>
                           <button 
                             onClick={() => removeItem(item.id)}

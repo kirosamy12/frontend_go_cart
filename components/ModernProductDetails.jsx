@@ -80,7 +80,10 @@ const ModernProductDetails = ({ product }) => {
                                 src={mainImage || '/placeholder-image.jpg'} 
                                 alt={product?.name || 'Product'} 
                                 fill
-                                className="object-contain p-8 hover:scale-105 transition-transform duration-300" 
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                quality={100}
+                                className="object-contain p-12 hover:scale-105 transition-transform duration-300" 
+                                priority
                             />
                             {discountPercentage > 0 && (
                                 <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
@@ -113,8 +116,10 @@ const ModernProductDetails = ({ product }) => {
                                     >
                                         <Image 
                                             src={image || '/placeholder-image.jpg'} 
-                                            alt="" 
+                                            alt={`Product image ${index + 1}`} 
                                             fill
+                                            sizes="80px"
+                                            quality={100}
                                             className="object-cover" 
                                         />
                                     </button>

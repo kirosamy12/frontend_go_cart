@@ -8,6 +8,19 @@ const ProductDescription = ({ product }) => {
 
     const [selectedTab, setSelectedTab] = useState('Description')
 
+    // Format date in a way that avoids hydration issues
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No date';
+        try {
+            const date = new Date(dateString);
+            // Check if date is valid
+            if (isNaN(date.getTime())) return 'Invalid date';
+            return date.toDateString();
+        } catch (error) {
+            return 'Invalid date';
+        }
+    };
+
     return (
         <div className="my-18 text-sm text-slate-600">
 
@@ -41,7 +54,7 @@ const ProductDescription = ({ product }) => {
                                 </div>
                                 <p className="text-sm max-w-lg my-4">{item.review || 'No review text'}</p>
                                 <p className="font-medium text-slate-800">{item.user ? item.user.name : 'Anonymous'}</p>
-                                <p className="mt-3 font-light">{item.createdAt ? new Date(item.createdAt).toDateString() : 'No date'}</p>
+                                <p className="mt-3 font-light">{formatDate(item.createdAt)}</p>
                             </div>
                         </div>
                     )) : (
