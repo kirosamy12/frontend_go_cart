@@ -31,14 +31,35 @@ export default function ProfileForm({ user: initialUser, token }) {
         e.preventDefault()
         setUpdating(true)
         try {
-            // Update user in Redux store
-            const updatedUser = { ...initialUser, ...formData }
-            dispatch(setUser(updatedUser))
-            // Update localStorage
-            localStorage.setItem('user', JSON.stringify(updatedUser))
-            toast.success('Profile updated successfully!')
+            // Make API call to update user info
+            const response = await fetch('https://go-cart-1bwm.vercel.app/api/updatePersonalInfo', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone || '' // Include phone if available
+                }),
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Update user in Redux store
+                const updatedUser = { ...initialUser, ...formData }
+                dispatch(setUser(updatedUser))
+                // Update localStorage
+                localStorage.setItem('user', JSON.stringify(updatedUser))
+                toast.success('Profile updated successfully!')
+            } else {
+                toast.error(data.message || 'Error updating profile')
+            }
         } catch (error) {
-            toast.error('Error updating profile')
+            console.error('Error updating profile:', error)
+            toast.error('Error updating profile. Please try again.')
         } finally {
             setUpdating(false)
         }
@@ -71,6 +92,18 @@ export default function ProfileForm({ user: initialUser, token }) {
                     placeholder="Enter your email"
                     className="border border-slate-300 outline-slate-400 w-full p-2 rounded"
                     required
+                />
+            </div>
+
+            <div>
+                <label className="block mb-1">Phone</label>
+                <input
+                    name="phone"
+                    type="tel"
+                    value={formData.phone || ''}
+                    onChange={onChangeHandler}
+                    placeholder="Enter your phone number"
+                    className="border border-slate-300 outline-slate-400 w-full p-2 rounded"
                 />
             </div>
 

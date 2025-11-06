@@ -88,9 +88,9 @@ export default function CreateStore() {
                     setAlreadySubmitted(true)
                     setStatus(data.store.status)
                     setMessage(`Your store "${data.store.name}" has been submitted and is currently ${data.store.status}.`)
-                    // Redirect to store page after 3 seconds
+                    // Redirect to store dashboard page after 3 seconds
                     setTimeout(() => {
-                        router.push(`/store/${data.store.username}`)
+                        router.push('/store')
                     }, 3000)
                 } else {
                     toast.error('Failed to submit store')
@@ -338,7 +338,7 @@ export default function CreateStore() {
                             <div className="space-y-4">
                                 <p className="text-slate-500">Redirecting to your store dashboard in <span className="font-semibold">3 seconds</span></p>
                                 <button 
-                                    onClick={() => router.push(`/store/${storeInfo.username}`)}
+                                    onClick={() => router.push('/store')}
                                     className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition"
                                 >
                                     Go to Dashboard

@@ -8,10 +8,6 @@ export const metadata = {
 
 export default function SellerStoriesLayout({ children }) {
   return (
-    <>
-      <Banner />
-      <ModernNavbar />
-      <main>{children}</main>
-    </>
+    <main>{children}</main>
   )
 }

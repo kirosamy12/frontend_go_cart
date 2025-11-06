@@ -1,6 +1,6 @@
 'use client'
+import React, { useEffect } from "react";
 import PageTitle from "@/components/PageTitle"
-import { useEffect } from "react";
 import OrderItem from "@/components/OrderItem";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserOrders } from "@/lib/features/orders/ordersSlice";
@@ -63,8 +63,11 @@ export default function Orders() {
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {/* Render each order with a unique key */}
                                     {orders.map((order) => (
-                                        <OrderItem order={order} key={order.id || order._id} />
+                                        <React.Fragment key={order.id || order._id}>
+                                            <OrderItem order={order} />
+                                        </React.Fragment>
                                     ))}
                                 </tbody>
                             </table>

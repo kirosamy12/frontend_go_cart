@@ -3,31 +3,43 @@ import { useState } from "react"
 import { Mail } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
+    const router = useRouter()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
         
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            // Make API call to send OTP
+            const response = await fetch('https://go-cart-1bwm.vercel.app/api/forgotPassword', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email })
+            })
+
+            const data = await response.json()
             
-            // In a real app, you would call your API here:
-            // const response = await fetch('/api/forgot-password', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ email })
-            // })
-            
-            toast.success("Password reset instructions sent to your email!")
-            setIsSubmitted(true)
+            if (data.success) {
+                toast.success("OTP sent to your email!")
+                setIsSubmitted(true)
+                // Redirect to OTP verification page
+                setTimeout(() => {
+                    router.push(`/forgot-password/verify?email=${encodeURIComponent(email)}`)
+                }, 2000)
+            } else {
+                toast.error(data.message || "Failed to send OTP. Please try again.")
+            }
         } catch (error) {
-            toast.error("Failed to send reset instructions. Please try again.")
+            console.error('Error sending OTP:', error)
+            toast.error("Failed to send OTP. Please try again.")
         } finally {
             setIsLoading(false)
         }
@@ -50,8 +62,8 @@ export default function ForgotPasswordPage() {
                         <h2 className="text-2xl font-bold text-slate-800">Reset Your Password</h2>
                         <p className="text-slate-600 mt-2">
                             {isSubmitted 
-                                ? "Check your email for instructions" 
-                                : "Enter your email and we'll send you instructions to reset your password"}
+                                ? "Check your email for OTP" 
+                                : "Enter your email and we'll send you an OTP to reset your password"}
                         </p>
                     </div>
 
@@ -63,22 +75,12 @@ export default function ForgotPasswordPage() {
                                 </svg>
                             </div>
                             <p className="text-slate-600 mb-6">
-                                We've sent password reset instructions to <span className="font-medium">{email}</span>
+                                We've sent an OTP to <span className="font-medium">{email}</span>
                             </p>
                             <p className="text-sm text-slate-500 mb-6">
-                                Didn't receive the email? Check your spam folder or <button 
-                                    onClick={() => setIsSubmitted(false)} 
-                                    className="text-indigo-600 hover:text-indigo-500 font-medium"
-                                >
-                                    try again
-                                </button>
+                                Redirecting to OTP verification page...
                             </p>
-                            <Link 
-                                href="/signin" 
-                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                            >
-                                Back to Sign In
-                            </Link>
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5">
@@ -110,10 +112,10 @@ export default function ForgotPasswordPage() {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Sending instructions...
+                                        Sending OTP...
                                     </>
                                 ) : (
-                                    "Send Reset Instructions"
+                                    "Send OTP"
                                 )}
                             </button>
                         </form>
