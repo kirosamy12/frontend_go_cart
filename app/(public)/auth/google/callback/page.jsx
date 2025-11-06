@@ -93,15 +93,8 @@ export default function GoogleCallback() {
                         } else if (decodedToken.role === 'store') {
                             router.push('/store')
                         } else {
-                            // For regular users, check if this is a new signup
-                            // You might need to adjust this logic based on your API response
-                            const isNewUser = decodedToken.isNewUser || false;
-                            
-                            if (isNewUser) {
-                                router.push('/auth/google/success')
-                            } else {
-                                router.push('/')
-                            }
+                            // For regular users, redirect to home page after successful signup/login
+                            router.push('/')
                         }
                     } else {
                         router.push('/signin?error=token_decode_failed')
