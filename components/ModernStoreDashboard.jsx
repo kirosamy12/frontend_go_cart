@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
 import { useAnalyticsData } from "@/lib/hooks/useAnalyticsData";
+import { useSuccessfulOrders } from "@/lib/hooks/useSuccessfulOrders";
 import {
   ShoppingBasketIcon,
   CircleDollarSignIcon,
@@ -27,6 +28,7 @@ const ModernStoreDashboard = () => {
   const storeId = user?.storeId || user?.store?.id || user?.store?._id;
   console.log("ModernStoreDashboard - StoreId:", storeId);
   const { data, loading, error } = useAnalyticsData("store");
+  const { data: successfulOrdersData, loading: successfulOrdersLoading, error: successfulOrdersError } = useSuccessfulOrders();
 
   const [timeRange, setTimeRange] = useState('7d') // 7d, 30d, 90d
 
@@ -86,7 +88,36 @@ const ModernStoreDashboard = () => {
     },
   ]
 
-  if (loading) {
+  // Format currency
+  const formatCurrency = (amount) => {
+    // Handle potential null or undefined values
+    if (!amount && amount !== 0) return 'N/A'
+    
+    // Assuming amounts are in cents, convert to dollars
+    const dollars = amount / 100
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(dollars)
+  }
+
+  // Format date
+  const formatDate = (dateString) => {
+    // Handle potential null or undefined values
+    if (!dateString) return 'N/A'
+    
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    } catch (e) {
+      return 'Invalid Date'
+    }
+  }
+
+  if (loading || successfulOrdersLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -94,7 +125,7 @@ const ModernStoreDashboard = () => {
     )
   }
 
-  if (error) {
+  if (error || successfulOrdersError) {
     return (
       <div className="text-center py-8">
         <div className="bg-red-50 border border-red-200 rounded-2xl p-8 max-w-2xl mx-auto">
@@ -104,7 +135,7 @@ const ModernStoreDashboard = () => {
             </svg>
           </div>
           <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Dashboard</h3>
-          <p className="text-red-700 mb-4">{error}</p>
+          <p className="text-red-700 mb-4">{error || successfulOrdersError}</p>
           
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p className="text-yellow-800 font-medium mb-2">Troubleshooting Tips:</p>
@@ -171,6 +202,20 @@ const ModernStoreDashboard = () => {
             >
               <PackageIcon size={18} />
               View Orders
+            </button>
+            <button 
+              key="view-invoices-button"
+              onClick={() => router.push('/store/invoices')}
+              className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-lg transition-colors font-medium border border-slate-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              View Invoices
             </button>
           </div>
         </div>
@@ -281,47 +326,37 @@ const ModernStoreDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Orders and Reviews */}
+      {/* Successful Orders and Reviews */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Orders */}
+        {/* Successful Orders */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-slate-800">Recent Orders</h2>
+            <h2 className="text-xl font-semibold text-slate-800">Successful Orders</h2>
             <Link key="view-all-orders-link" href="/store/orders" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
               View All
             </Link>
           </div>
           
           <div className="space-y-4">
-            {data?.recentOrders?.map((order, index) => (
-              <div key={order.id || order._id || (order.id && order.id.id) || `order-${index}` || `order-${Math.random()}`} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
+            {successfulOrdersData?.orders?.map((order) => (
+              <div key={order.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
                 <div>
-                  <p className="font-medium text-slate-800">Order #{(order.id || order._id || (order.id && order.id.id) || order.orderId || `order-${index}` || '').substring(0, 8)}</p>
-                  <p className="text-sm text-slate-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="font-medium text-slate-800">Order #{order.id?.substring(0, 8)}</p>
+                  <p className="text-sm text-slate-600">{formatDate(order.createdAt)}</p>
                   {order.customer && (
                     <p className="text-xs text-slate-500 mt-1">Customer: {order.customer.name}</p>
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-slate-800">{currency}{order.total}</p>
-                  <p className="text-xs text-slate-500 mt-1">{order.paymentMethod}</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium mt-1 inline-block ${
-                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                    order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
-                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-700' :
-                    order.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {order.status}
-                  </span>
+                  <p className="font-medium text-slate-800">{formatCurrency(order.total)}</p>
                 </div>
               </div>
             ))}
             
-            {(data?.recentOrders?.length === 0 || !data?.recentOrders) && (
-              <div key="no-orders" className="text-center py-8 text-slate-500">
+            {(successfulOrdersData?.orders?.length === 0 || !successfulOrdersData?.orders) && (
+              <div key="no-successful-orders" className="text-center py-8 text-slate-500">
                 <PackageIcon size={48} className="mx-auto mb-4 text-slate-300" />
-                <p>No orders yet</p>
+                <p>No successful orders yet</p>
               </div>
             )}
           </div>

@@ -44,7 +44,9 @@ const ModernStoreLayout = ({ children }) => {
         {
             title: 'Orders',
             items: [
-                { name: 'View Orders', href: '/store/orders', icon: StoreIcon }
+                { name: 'View Orders', href: '/store/orders', icon: StoreIcon },
+                { name: 'Successful Orders', href: '/store/successful-orders', icon: StoreIcon },
+                { name: 'Invoices', href: '/store/invoices', icon: StoreIcon }
             ]
         }
     ]

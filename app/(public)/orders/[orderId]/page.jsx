@@ -5,7 +5,16 @@ import { useParams } from 'next/navigation'
 import { getOrderById } from '@/lib/features/orders/ordersSlice'
 import PageTitle from '@/components/PageTitle'
 import Image from 'next/image'
-import { DotIcon, MapPinIcon, CreditCardIcon, CalendarIcon } from 'lucide-react'
+import { 
+  MapPinIcon, 
+  CreditCardIcon, 
+  CalendarIcon, 
+  PackageIcon,
+  TruckIcon,
+  CheckCircleIcon
+} from 'lucide-react'
+import Link from 'next/link'
+import { ArrowLeftIcon } from 'lucide-react'
 
 const OrderDetailsPage = () => {
     const { orderId } = useParams()
@@ -55,9 +64,11 @@ const OrderDetailsPage = () => {
             case 'delivered':
                 return 'text-green-600 bg-green-100'
             case 'confirmed':
-                return 'text-yellow-600 bg-yellow-100'
-            case 'pending':
                 return 'text-blue-600 bg-blue-100'
+            case 'processing':
+                return 'text-yellow-600 bg-yellow-100'
+            case 'shipped':
+                return 'text-indigo-600 bg-indigo-100'
             case 'cancelled':
                 return 'text-red-600 bg-red-100'
             default:
@@ -65,19 +76,47 @@ const OrderDetailsPage = () => {
         }
     }
 
+    // Format date
+    const formatDate = (dateString) => {
+        try {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        } catch (e) {
+            return 'Invalid Date';
+        }
+    }
+
     return (
         <div className="min-h-[70vh] mx-6">
-            <div className="my-20 max-w-7xl mx-auto">
-                <PageTitle heading="Order Details" text={`Order ID: ${currentOrder.id || currentOrder._id}`} linkText={'Back to orders'} linkHref={'/orders'} />
+            <div className="my-8 max-w-7xl mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-800">Order Details</h1>
+                        <p className="text-slate-600 mt-2">Order ID: {currentOrder.id || currentOrder._id}</p>
+                    </div>
+                    <Link 
+                        href="/orders" 
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    >
+                        <ArrowLeftIcon size={18} />
+                        <span>Back to Orders</span>
+                    </Link>
+                </div>
 
-                <div className="grid lg:grid-cols-3 gap-8 mt-8">
+                <div className="grid lg:grid-cols-3 gap-8">
                     {/* Order Summary */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Order Info */}
+                        {/* Order Status */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-slate-800">Order Information</h2>
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(currentOrder.status)}`}>
+                                <h2 className="text-xl font-semibold text-slate-800">Order Status</h2>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(currentOrder.status)}`}>
+                                    <PackageIcon size={14} />
                                     {currentOrder.status?.replace(/_/g, ' ').toLowerCase()}
                                 </span>
                             </div>
@@ -86,13 +125,7 @@ const OrderDetailsPage = () => {
                                     <CalendarIcon size={16} className="text-slate-400" />
                                     <span className="text-slate-600">Order Date:</span>
                                     <span className="font-medium">
-                                        {(() => {
-                                            try {
-                                                return new Date(currentOrder.createdAt).toLocaleDateString();
-                                            } catch (error) {
-                                                return 'Invalid date';
-                                            }
-                                        })()}
+                                        {formatDate(currentOrder.createdAt)}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -113,14 +146,14 @@ const OrderDetailsPage = () => {
                                     const productImage = item.product?.images?.[0] || item.image || '/assets/product_img1.png'
 
                                     return (
-                                        <div key={index} className="flex items-center gap-4 p-4 border border-slate-100 rounded-lg">
-                                            <div className="w-16 h-16 bg-slate-100 flex items-center justify-center rounded-lg">
+                                        <div key={index} className="flex items-center gap-4 p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
+                                            <div className="w-16 h-16 bg-slate-100 flex items-center justify-center rounded-lg overflow-hidden">
                                                 <Image
-                                                    className="h-12 w-auto"
+                                                    className="object-contain w-full h-full"
                                                     src={productImage}
-                                                    alt="product_img"
-                                                    width={48}
-                                                    height={48}
+                                                    alt={productName}
+                                                    width={64}
+                                                    height={64}
                                                     onError={(e) => {
                                                         e.target.src = '/assets/product_img1.png'
                                                     }}
@@ -128,7 +161,7 @@ const OrderDetailsPage = () => {
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-medium text-slate-800">{productName}</h3>
-                                                <p className="text-sm text-slate-500">Quantity: {item.quantity}</p>
+                                                <p className="text-sm text-slate-600">Quantity: {item.quantity}</p>
                                                 <p className="text-sm font-medium text-slate-700">{currency}{item.price} each</p>
                                             </div>
                                             <div className="text-right">

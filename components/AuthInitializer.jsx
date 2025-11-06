@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { checkAuthStatus } from '@/lib/features/auth/authSlice'
 import { getUserAddresses } from '@/lib/features/address/addressSlice'
 import { fetchProducts } from '@/lib/features/product/productSlice'
+import { getCart } from '@/lib/features/cart/cartSlice'
 
 export default function AuthInitializer() {
     const dispatch = useDispatch()
@@ -17,6 +18,7 @@ export default function AuthInitializer() {
     useEffect(() => {
         if (isAuthenticated) {
             dispatch(getUserAddresses())
+            dispatch(getCart()) // Fetch cart when user is authenticated
         }
     }, [isAuthenticated, dispatch])
 

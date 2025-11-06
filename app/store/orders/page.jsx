@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import { useSearchParams } from 'next/navigation'
 import Loading from "@/components/Loading"
 import OrderTracking from "@/components/OrderTracking"
 import { getStoreOrders, updateOrderStatus } from "@/lib/features/orders/ordersSlice"
@@ -11,6 +12,8 @@ export default function StoreOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isTrackingOpen, setIsTrackingOpen] = useState(false)
+    const searchParams = useSearchParams()
+    const statusFilter = searchParams.get('status')
 
     const fetchOrders = async () => {
         dispatch(getStoreOrders())
@@ -54,6 +57,11 @@ export default function StoreOrders() {
         fetchOrders()
     }, [dispatch])
 
+    // Filter orders based on status if provided
+    const filteredOrders = statusFilter 
+        ? storeOrders.filter(order => order.status === statusFilter.toUpperCase())
+        : storeOrders
+
     if (loading) return <Loading />
 
     if (error) {
@@ -73,7 +81,7 @@ export default function StoreOrders() {
     return (
         <div>
             <h1 className="text-3xl text-slate-800 font-semibold mb-5">Store <span className="text-blue-600">Orders</span></h1>
-            {storeOrders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
                 <p>No orders found</p>
             ) : (
                 <div className="overflow-x-auto max-w-6xl rounded-md shadow border border-gray-200">
@@ -86,7 +94,7 @@ export default function StoreOrders() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {storeOrders.map((order, index) => (
+                            {filteredOrders.map((order, index) => (
                                 <tr
                                     key={order.id || order._id || order.orderId || (order._id && order._id._id) || index}
                                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"

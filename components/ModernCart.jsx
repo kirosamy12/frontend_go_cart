@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { removeFromCartAsync, updateCart } from "@/lib/features/cart/cartSlice"
+import { removeFromCartAsync, updateCart, getCart } from "@/lib/features/cart/cartSlice"
 import { fetchProducts } from "@/lib/features/product/productSlice"
 import { 
   ShoppingBagIcon, 
@@ -21,13 +21,20 @@ const ModernCart = () => {
   const router = useRouter()
   const dispatch = useDispatch()
 
-  const { cartItems } = useSelector(state => state.cart)
+  const { cartItems, loading } = useSelector(state => state.cart)
   const products = useSelector(state => state.product.list)
   const { token } = useSelector(state => state.auth)
 
   const [cartArray, setCartArray] = useState([])
   const [totalPrice, setTotalPrice] = useState(0)
   const [isUpdating, setIsUpdating] = useState(false)
+
+  // Fetch cart data on component mount
+  useEffect(() => {
+    if (token) {
+      dispatch(getCart())
+    }
+  }, [token, dispatch])
 
   // Create cart array from cart items and products
   const createCartArray = () => {
@@ -107,6 +114,19 @@ const ModernCart = () => {
   // Proceed to checkout
   const proceedToCheckout = () => {
     router.push('/checkout')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+            <h1 className="text-xl font-semibold text-slate-800">Loading your cart...</h1>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (cartArray.length === 0) {
