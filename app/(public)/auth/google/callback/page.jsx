@@ -93,7 +93,15 @@ export default function GoogleCallback() {
                         } else if (decodedToken.role === 'store') {
                             router.push('/store')
                         } else {
-                            router.push('/')
+                            // For regular users, check if this is a new signup
+                            // You might need to adjust this logic based on your API response
+                            const isNewUser = decodedToken.isNewUser || false;
+                            
+                            if (isNewUser) {
+                                router.push('/auth/google/success')
+                            } else {
+                                router.push('/')
+                            }
                         }
                     } else {
                         router.push('/signin?error=token_decode_failed')
@@ -103,7 +111,12 @@ export default function GoogleCallback() {
                 }
             } catch (error) {
                 console.error('Google OAuth callback error:', error)
-                router.push('/signin?error=server_error')
+                // More detailed error handling
+                if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    router.push('/signin?error=network_error')
+                } else {
+                    router.push('/signin?error=server_error')
+                }
             }
         }
 
