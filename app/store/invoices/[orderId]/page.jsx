@@ -32,7 +32,7 @@ export default function InvoiceDetails() {
             const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
             // Updated API endpoint
-            const response = await fetch(`https://go-cart-1bwm.vercel.app/api/order/invoice/${orderId}`, {
+            const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/invoice/${orderId}`, {
                 method: 'GET',
                 headers: {
                     'token': token,

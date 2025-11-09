@@ -30,7 +30,7 @@ export default function StoreInvoices() {
             console.error('Error fetching invoices:', error)
             // Provide more specific error messages
             if (error.message.includes('Failed to fetch')) {
-                setLocalError('Unable to connect to the server. Please check your internet connection and ensure the API server is running. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/kiro/order/invoices')
+                setLocalError('Unable to connect to the server. Please check your internet connection and ensure the API server is running. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/invoices')
             } else {
                 setLocalError(error.message || 'Failed to fetch invoices. Please try again later.')
             }

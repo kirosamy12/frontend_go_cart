@@ -2,7 +2,8 @@
 import { dummyAdminDashboardData } from "@/assets/assets"
 import Loading from "@/components/Loading"
 import OrdersAreaChart from "@/components/OrdersAreaChart"
-import { CircleDollarSignIcon, ShoppingBasketIcon, StoreIcon, TagsIcon } from "lucide-react"
+import AdvancedAnalyticsDashboard from "@/components/AdvancedAnalyticsDashboard"
+import { CircleDollarSignIcon, ShoppingBasketIcon, StoreIcon, TagsIcon, BarChart3Icon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 export default function AdminDashboard() {
@@ -17,6 +18,8 @@ export default function AdminDashboard() {
         stores: 0,
         allOrders: [],
     })
+
+    const [activeView, setActiveView] = useState('overview') // 'overview' or 'analytics'
 
     const dashboardCardsData = [
         { title: 'Total Products', value: dashboardData.products, icon: ShoppingBasketIcon },
@@ -75,25 +78,61 @@ const fetchDashboardData = async () => {
 
     return (
         <div className="text-slate-500">
-            <h1 className="text-2xl">Admin <span className="text-slate-800 font-medium">Dashboard</span></h1>
-
-            {/* Cards */}
-            <div className="flex flex-wrap gap-5 my-10 mt-4">
-                {
-                    dashboardCardsData.map((card, index) => (
-                        <div key={index} className="flex items-center gap-10 border border-slate-200 p-3 px-6 rounded-lg">
-                            <div className="flex flex-col gap-3 text-xs">
-                                <p>{card.title}</p>
-                                <b className="text-2xl font-medium text-slate-700">{card.value}</b>
-                            </div>
-                            <card.icon size={50} className=" w-11 h-11 p-2.5 text-slate-400 bg-slate-100 rounded-full" />
-                        </div>
-                    ))
-                }
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <h1 className="text-2xl">Admin <span className="text-slate-800 font-medium">Dashboard</span></h1>
+                
+                {/* View Toggle */}
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                        onClick={() => setActiveView('overview')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            activeView === 'overview' 
+                                ? 'bg-white text-slate-800 shadow-sm' 
+                                : 'text-slate-600 hover:text-slate-800'
+                        }`}
+                    >
+                        <BarChart3Icon size={16} />
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveView('analytics')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            activeView === 'analytics' 
+                                ? 'bg-white text-slate-800 shadow-sm' 
+                                : 'text-slate-600 hover:text-slate-800'
+                        }`}
+                    >
+                        <BarChart3Icon size={16} />
+                        Advanced Analytics
+                    </button>
+                </div>
             </div>
 
-            {/* Area Chart */}
-            <OrdersAreaChart allOrders={dashboardData.allOrders} />
+            {activeView === 'overview' ? (
+                <>
+                    {/* Cards */}
+                    <div className="flex flex-wrap gap-5 my-10 mt-4">
+                        {
+                            dashboardCardsData.map((card, index) => (
+                                <div key={index} className="flex items-center gap-10 border border-slate-200 p-3 px-6 rounded-lg">
+                                    <div className="flex flex-col gap-3 text-xs">
+                                        <p>{card.title}</p>
+                                        <b className="text-2xl font-medium text-slate-700">{card.value}</b>
+                                    </div>
+                                    <card.icon size={50} className=" w-11 h-11 p-2.5 text-slate-400 bg-slate-100 rounded-full" />
+                                </div>
+                            ))
+                        }
+                    </div>
+
+                    {/* Area Chart */}
+                    <OrdersAreaChart allOrders={dashboardData.allOrders} />
+                </>
+            ) : (
+                <div className="mt-6">
+                    <AdvancedAnalyticsDashboard />
+                </div>
+            )}
         </div>
     )
 }

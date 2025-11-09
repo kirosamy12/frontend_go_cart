@@ -15,7 +15,8 @@ import {
   DollarSignIcon, 
   UsersIcon,
   BarChart3Icon,
-  PieChartIcon
+  PieChartIcon,
+  StoreIcon
 } from "lucide-react";
 import { 
   LineChart, 
@@ -42,46 +43,85 @@ const AdvancedAnalyticsDashboard = () => {
   
   // Check if user is a store owner
   const isStoreOwner = user?.role === 'store';
+  const isAdmin = user?.role === 'admin';
   
-  // If user is not a store owner, show appropriate message
-  if (!isStoreOwner) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Access denied. This page is only available for store owners.</p>
-      </div>
-    );
-  }
+  // For admin users, we'll show platform-wide analytics
+  // For store owners, we'll show store-specific analytics
   
-  // If no storeId found for store owner, show error
-  if (isStoreOwner && !storeId) {
-    return (
-      <div className="p-6">
-        {showDebug && <DebugStoreId />}
-        <div className="text-center py-8">
-          <p className="text-red-600">Store ID not found. Please contact support.</p>
-          <p className="text-sm text-gray-500 mt-2">User role: {user?.role}</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Only call hooks if we have a storeId
+  // Only call hooks if we have a storeId (for store owners) or if we're admin
   const hasStoreId = !!storeId;
   
-  const { data: advancedData, loading: advancedLoading, error: advancedError } = 
-    hasStoreId ? useAdvancedStoreAnalytics(storeId) : { data: null, loading: false, error: null };
+  // For store owners, use store-specific analytics
+  const { data: storeAdvancedData, loading: storeAdvancedLoading, error: storeAdvancedError } = 
+    (isStoreOwner && hasStoreId) ? useAdvancedStoreAnalytics(storeId) : { data: null, loading: false, error: null };
     
-  const { data: revenueTrendData, loading: revenueLoading, error: revenueError } = 
-    hasStoreId ? useRevenueTrend(storeId) : { data: null, loading: false, error: null };
+  const { data: storeRevenueTrendData, loading: storeRevenueLoading, error: storeRevenueError } = 
+    (isStoreOwner && hasStoreId) ? useRevenueTrend(storeId) : { data: null, loading: false, error: null };
     
-  const { data: productSalesData, loading: productSalesLoading, error: productSalesError } = 
-    hasStoreId ? useProductSalesDistribution(storeId) : { data: null, loading: false, error: null };
+  const { data: storeProductSalesData, loading: storeProductSalesLoading, error: storeProductSalesError } = 
+    (isStoreOwner && hasStoreId) ? useProductSalesDistribution(storeId) : { data: null, loading: false, error: null };
     
-  const { data: orderVolumeData, loading: orderVolumeLoading, error: orderVolumeError } = 
-    hasStoreId ? useOrderVolumeByDay(storeId) : { data: null, loading: false, error: null };
+  const { data: storeOrderVolumeData, loading: storeOrderVolumeLoading, error: storeOrderVolumeError } = 
+    (isStoreOwner && hasStoreId) ? useOrderVolumeByDay(storeId) : { data: null, loading: false, error: null };
     
-  const { data: customerAcquisitionData, loading: customerAcquisitionLoading, error: customerAcquisitionError } = 
-    hasStoreId ? useCustomerAcquisition(storeId) : { data: null, loading: false, error: null };
+  const { data: storeCustomerAcquisitionData, loading: storeCustomerAcquisitionLoading, error: storeCustomerAcquisitionError } = 
+    (isStoreOwner && hasStoreId) ? useCustomerAcquisition(storeId) : { data: null, loading: false, error: null };
+  
+  // For admin users, we'll simulate platform-wide analytics or fetch from different endpoints
+  // In a real implementation, you would have specific hooks for admin analytics
+  const adminData = {
+    metrics: {
+      totalRevenue: 125000,
+      totalOrders: 2450,
+      totalProducts: 8500,
+      newCustomers: 320,
+      totalStores: 42
+    },
+    recentActivity: [
+      { title: "New Store Registered", description: "TechGadgets Store has joined the platform", timestamp: new Date() },
+      { title: "High Sales Day", description: "Black Friday sales generated $12,500 in revenue", timestamp: new Date(Date.now() - 86400000) },
+      { title: "New Feature Launched", description: "Mobile app now available on App Store", timestamp: new Date(Date.now() - 172800000) },
+      { title: "System Maintenance", description: "Scheduled maintenance completed successfully", timestamp: new Date(Date.now() - 259200000) },
+      { title: "Customer Milestone", description: "10,000th customer registered on the platform", timestamp: new Date(Date.now() - 345600000) }
+    ]
+  };
+  
+  // Simulated data for admin charts
+  const adminRevenueTrendData = [
+    { date: 'Jan', revenue: 8500 },
+    { date: 'Feb', revenue: 12200 },
+    { date: 'Mar', revenue: 15600 },
+    { date: 'Apr', revenue: 18900 },
+    { date: 'May', revenue: 22400 },
+    { date: 'Jun', revenue: 25800 }
+  ];
+  
+  const adminStorePerformanceData = [
+    { name: 'TechGadgets', value: 32000 },
+    { name: 'FashionHub', value: 28500 },
+    { name: 'HomeEssentials', value: 21000 },
+    { name: 'SportsWorld', value: 18500 },
+    { name: 'BookNook', value: 12500 }
+  ];
+  
+  const adminOrderVolumeData = [
+    { day: 'Mon', orders: 120 },
+    { day: 'Tue', orders: 95 },
+    { day: 'Wed', orders: 110 },
+    { day: 'Thu', orders: 140 },
+    { day: 'Fri', orders: 180 },
+    { day: 'Sat', orders: 210 },
+    { day: 'Sun', orders: 165 }
+  ];
+  
+  const adminCustomerAcquisitionData = [
+    { date: 'Jan', customers: 420 },
+    { date: 'Feb', customers: 380 },
+    { date: 'Mar', customers: 510 },
+    { date: 'Apr', customers: 460 },
+    { date: 'May', customers: 620 },
+    { date: 'Jun', customers: 580 }
+  ];
   
   const [timeRange, setTimeRange] = useState('30d'); // 7d, 30d, 90d
 
@@ -89,7 +129,8 @@ const AdvancedAnalyticsDashboard = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   // Loading state
-  if (advancedLoading || revenueLoading || productSalesLoading || orderVolumeLoading || customerAcquisitionLoading) {
+  if ((isStoreOwner && (storeAdvancedLoading || storeRevenueLoading || storeProductSalesLoading || storeOrderVolumeLoading || storeCustomerAcquisitionLoading)) || 
+      (isAdmin && false)) { // Admin doesn't have real loading states in this simulation
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -98,18 +139,26 @@ const AdvancedAnalyticsDashboard = () => {
   }
 
   // Error state
-  if (advancedError || revenueError || productSalesError || orderVolumeError || customerAcquisitionError) {
+  if ((isStoreOwner && (storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError))) {
     return (
       <div className="p-6">
         {showDebug && <DebugStoreId />}
         <div className="text-center py-8">
           <p className="text-red-600">Error loading analytics: 
-            {advancedError || revenueError || productSalesError || orderVolumeError || customerAcquisitionError}
+            {storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError}
           </p>
         </div>
       </div>
     );
   }
+
+  // Determine which data to use based on user role
+  const currentData = isStoreOwner ? storeAdvancedData : adminData;
+  const revenueTrendData = isStoreOwner ? storeRevenueTrendData : adminRevenueTrendData;
+  const productSalesData = isStoreOwner ? storeProductSalesData : null; // Admin doesn't have this chart
+  const storePerformanceData = isAdmin ? adminStorePerformanceData : null; // Only admin has this chart
+  const orderVolumeData = isStoreOwner ? storeOrderVolumeData : adminOrderVolumeData;
+  const customerAcquisitionData = isStoreOwner ? storeCustomerAcquisitionData : adminCustomerAcquisitionData;
 
   return (
     <div className="p-6">
@@ -117,9 +166,13 @@ const AdvancedAnalyticsDashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Advanced Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold text-slate-800">
+            {isAdmin ? "Platform Analytics Dashboard" : "Advanced Store Analytics"}
+          </h1>
           <p className="text-slate-600 mt-2">
-            Detailed insights and performance metrics for your store
+            {isAdmin 
+              ? "Comprehensive platform-wide insights and performance metrics" 
+              : "Detailed insights and performance metrics for your store"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -136,63 +189,125 @@ const AdvancedAnalyticsDashboard = () => {
       </div>
 
       {/* Metrics Cards */}
-      {advancedData && (
+      {currentData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  ${advancedData.metrics?.totalRevenue?.toLocaleString() || 0}
-                </p>
+          {isAdmin ? (
+            <>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      ${currentData.metrics?.totalRevenue?.toLocaleString() || 0}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <DollarSignIcon size={24} className="text-green-600" />
+                  </div>
+                </div>
               </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <DollarSignIcon size={24} className="text-green-600" />
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Orders</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.totalOrders || 0}
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <ShoppingBagIcon size={24} className="text-blue-600" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">Total Orders</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {advancedData.metrics?.totalOrders || 0}
-                </p>
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Products</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.totalProducts || 0}
+                    </p>
+                  </div>
+                  <div className="bg-purple-100 p-3 rounded-lg">
+                    <BarChart3Icon size={24} className="text-purple-600" />
+                  </div>
+                </div>
               </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <ShoppingBagIcon size={24} className="text-blue-600" />
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Stores</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.totalStores || 0}
+                    </p>
+                  </div>
+                  <div className="bg-orange-100 p-3 rounded-lg">
+                    <StoreIcon size={24} className="text-orange-600" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">Total Products</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {advancedData.metrics?.totalProducts || 0}
-                </p>
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      ${currentData.metrics?.totalRevenue?.toLocaleString() || 0}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <DollarSignIcon size={24} className="text-green-600" />
+                  </div>
+                </div>
               </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <BarChart3Icon size={24} className="text-purple-600" />
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Orders</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.totalOrders || 0}
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <ShoppingBagIcon size={24} className="text-blue-600" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">New Customers</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {advancedData.metrics?.newCustomers || 0}
-                </p>
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">Total Products</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.totalProducts || 0}
+                    </p>
+                  </div>
+                  <div className="bg-purple-100 p-3 rounded-lg">
+                    <BarChart3Icon size={24} className="text-purple-600" />
+                  </div>
+                </div>
               </div>
-              <div className="bg-orange-100 p-3 rounded-lg">
-                <UsersIcon size={24} className="text-orange-600" />
+              
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">New Customers</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      {currentData.metrics?.newCustomers || 0}
+                    </p>
+                  </div>
+                  <div className="bg-orange-100 p-3 rounded-lg">
+                    <UsersIcon size={24} className="text-orange-600" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       )}
 
@@ -230,40 +345,76 @@ const AdvancedAnalyticsDashboard = () => {
           )}
         </div>
 
-        {/* Product Sales Distribution */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <PieChartIcon size={24} className="text-slate-600" />
-            <h2 className="text-xl font-semibold text-slate-800">Product Sales Distribution</h2>
-          </div>
-          {productSalesData?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={productSalesData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                >
-                  {productSalesData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [value, 'Sales']} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center text-slate-500">
-              No product sales data available
+        {/* Product Sales Distribution or Store Performance */}
+        {isAdmin ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <PieChartIcon size={24} className="text-slate-600" />
+              <h2 className="text-xl font-semibold text-slate-800">Top Performing Stores</h2>
             </div>
-          )}
-        </div>
+            {storePerformanceData?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={storePerformanceData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                  >
+                    {storePerformanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-slate-500">
+                No store performance data available
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <PieChartIcon size={24} className="text-slate-600" />
+              <h2 className="text-xl font-semibold text-slate-800">Product Sales Distribution</h2>
+            </div>
+            {productSalesData?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={productSalesData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                  >
+                    {productSalesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [value, 'Sales']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-slate-500">
+                No product sales data available
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Order Volume by Day */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -323,11 +474,11 @@ const AdvancedAnalyticsDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      {advancedData?.recentActivity && (
+      {currentData?.recentActivity && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-xl font-semibold text-slate-800 mb-6">Recent Activity</h2>
           <div className="space-y-4">
-            {advancedData.recentActivity.slice(0, 5).map((activity, index) => (
+            {currentData.recentActivity.slice(0, 5).map((activity, index) => (
               <div key={index} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <TrendingUpIcon size={16} className="text-blue-600" />
