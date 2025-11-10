@@ -75,21 +75,7 @@ const ProductCard = ({ product }) => {
                         </div>
                     )}
                     
-                    {/* Size indicators */}
-                    {product?.sizes && product.sizes.length > 0 && (
-                        <div className="absolute bottom-3 right-3 flex gap-1">
-                            {product.sizes.slice(0, 3).map((size, index) => (
-                                <div key={index} className="w-5 h-5 bg-white text-xs flex items-center justify-center rounded-full border border-slate-200">
-                                    {size}
-                                </div>
-                            ))}
-                            {product.sizes.length > 3 && (
-                                <div className="w-5 h-5 bg-white text-xs flex items-center justify-center rounded-full border border-slate-200">
-                                    +{product.sizes.length - 3}
-                                </div>
-                            )}
-                        </div>
-                    )}
+
                 </div>
                 
                 {/* Product info */}

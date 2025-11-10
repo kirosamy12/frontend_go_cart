@@ -1,187 +1,172 @@
 'use client'
 import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { getOrderTracking } from "@/lib/features/orders/ordersSlice"
-import Loading from "@/components/Loading"
+import ModernLoading from "@/components/ModernLoading"
+import { TruckIcon, PackageIcon, CheckCircleIcon, ClockIcon } from "lucide-react"
 
-export default function OrderTracking({ orderId, onClose }) {
-    const dispatch = useDispatch()
-    const { orderTracking, loading, error } = useSelector(state => state.orders)
-    const [hasFetched, setHasFetched] = useState(false)
+const OrderTracking = ({ orderId, token }) => {
+    const [trackingData, setTrackingData] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    const fetchTrackingData = async () => {
+        try {
+            setLoading(true)
+            setError(null)
+            
+            if (!token || !orderId) {
+                throw new Error('Missing required parameters: token or orderId')
+            }
+
+            const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/order/${orderId}/tracking`, {
+                headers: {
+                    'token': token,
+                }
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                if (response.status === 401) {
+                    throw new Error('Authentication failed. Please log in again.')
+                }
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+            }
+
+            const data = await response.json()
+            if (!data.success) throw new Error(data.message || 'Failed to get tracking data')
+            
+            setTrackingData(data.tracking)
+        } catch (error) {
+            console.error('Error fetching tracking data:', error)
+            setError(error.message || 'Failed to fetch tracking data. Please try again later.')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        if (orderId && !hasFetched && !orderTracking) {
-            dispatch(getOrderTracking(orderId))
-            setHasFetched(true)
+        if (orderId && token) {
+            fetchTrackingData()
         }
-    }, [orderId, hasFetched, orderTracking, dispatch])
+    }, [orderId, token])
 
-    if (loading) return <Loading />
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'ORDER_PLACED':
+                return 'bg-blue-100 text-blue-800'
+            case 'PROCESSING':
+                return 'bg-yellow-100 text-yellow-800'
+            case 'SHIPPED':
+                return 'bg-indigo-100 text-indigo-800'
+            case 'DELIVERED':
+                return 'bg-green-100 text-green-800'
+            default:
+                return 'bg-gray-100 text-gray-800'
+        }
+    }
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'ORDER_PLACED':
+                return <ClockIcon size={20} />
+            case 'PROCESSING':
+                return <PackageIcon size={20} />
+            case 'SHIPPED':
+                return <TruckIcon size={20} />
+            case 'DELIVERED':
+                return <CheckCircleIcon size={20} />
+            default:
+                return <ClockIcon size={20} />
+        }
+    }
+
+    if (loading) return <ModernLoading />
 
     if (error) {
         return (
             <div className="text-center py-8">
-                <p className="text-red-500">Error loading tracking: {error}</p>
-                <button
-                    onClick={() => {
-                        dispatch(getOrderTracking(orderId))
-                        setHasFetched(true)
-                    }}
-                    className="mt-4 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900"
-                >
-                    Try Again
-                </button>
-            </div>
-        )
-    }
-
-    if (!orderTracking) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/50 text-slate-700 text-sm backdrop-blur-xs z-50">
-                <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
-                    <h2 className="text-xl font-semibold text-slate-900 mb-6 text-center">
-                        Order Tracking - #{orderId}
-                    </h2>
-                    <div className="text-center py-8">
-                        <p className="text-slate-500 mb-4">Loading tracking information...</p>
-                        {!hasFetched && (
-                            <p className="text-sm text-slate-400">Fetching data from server...</p>
-                        )}
-                        {hasFetched && !loading && (
-                            <p className="text-sm text-slate-400">No tracking information available for this order.</p>
-                        )}
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-2xl mx-auto">
+                    <div className="mb-4">
+                        <svg className="w-16 h-16 text-red-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
                     </div>
-                    <div className="flex justify-end gap-3">
-                        <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 transition-colors">
-                            Close
-                        </button>
+                    <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Tracking Data</h3>
+                    <p className="text-red-700 mb-4">{error}</p>
+                    
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <p className="text-yellow-800 font-medium mb-2">Troubleshooting Tips:</p>
+                        <ul className="text-left text-sm text-yellow-700 space-y-1 max-w-md mx-auto">
+                            <li key="tip1">• Check your internet connection</li>
+                            <li key="tip2">• Verify the API server is running</li>
+                            <li key="tip3">• Try refreshing the page</li>
+                            <li key="tip4">• Ensure you have proper permissions</li>
+                        </ul>
                     </div>
+                    
+                    <button
+                        onClick={fetchTrackingData}
+                        className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+                    >
+                        Try Again
+                    </button>
                 </div>
             </div>
         )
     }
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'pending': return 'bg-gray-100 text-gray-700'
-            case 'processing': return 'bg-yellow-100 text-yellow-700'
-            case 'shipped': return 'bg-blue-100 text-blue-700'
-            case 'delivered': return 'bg-green-100 text-green-700'
-            default: return 'bg-gray-100 text-gray-700'
-        }
-    }
-
-    const getProgressColor = (percentage) => {
-        if (percentage >= 75) return 'bg-green-500'
-        if (percentage >= 50) return 'bg-blue-500'
-        if (percentage >= 25) return 'bg-yellow-500'
-        return 'bg-gray-500'
+    if (!trackingData) {
+        return (
+            <div className="text-center py-12">
+                <div className="bg-gray-100 border border-gray-200 rounded-xl p-8 max-w-md mx-auto">
+                    <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Tracking Data Not Found</h3>
+                    <p className="text-gray-500">The requested tracking data could not be found.</p>
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 text-slate-700 text-sm backdrop-blur-xs z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-semibold text-slate-900 mb-6 text-center">
-                    Order Tracking - #{orderTracking.orderId}
-                </h2>
-
-                {/* Store Information */}
-                {orderTracking.store && (
-                    <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                        <div className="flex items-center gap-4">
-                            {orderTracking.store.logo && (
-                                <img
-                                    src={orderTracking.store.logo}
-                                    alt={orderTracking.store.name}
-                                    className="w-12 h-12 rounded-full object-cover"
-                                />
-                            )}
-                            <div>
-                                <h3 className="font-semibold text-slate-800">{orderTracking.store.name}</h3>
-                                <p className="text-slate-600">@{orderTracking.store.username}</p>
-                                {orderTracking.store.contact && (
-                                    <p className="text-slate-600 text-sm">📞 {orderTracking.store.contact}</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Order Summary */}
-                <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-6">Order Tracking</h2>
+            
+            <div className="space-y-6">
+                {/* Current Status */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-slate-500 text-xs uppercase">Status</p>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(orderTracking.currentStatus)}`}>
-                                {orderTracking.currentStatus}
-                            </span>
+                            <p className="text-sm text-slate-500">Current Status</p>
+                            <p className="text-lg font-semibold text-slate-800">{trackingData.currentStatus}</p>
                         </div>
-                        <div>
-                            <p className="text-slate-500 text-xs uppercase">Progress</p>
-                            <p className="font-medium">{orderTracking.progressPercentage}%</p>
-                        </div>
-                        <div>
-                            <p className="text-slate-500 text-xs uppercase">Total</p>
-                            <p className="font-medium">${orderTracking.total}</p>
-                        </div>
-                        <div>
-                            <p className="text-slate-500 text-xs uppercase">Payment</p>
-                            <span className={`px-2 py-1 rounded text-xs ${
-                                orderTracking.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                                {orderTracking.isPaid ? 'Paid' : 'Pending'}
-                            </span>
-                        </div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(trackingData.currentStatus)}`}>
+                            {getStatusIcon(trackingData.currentStatus)}
+                            <span className="ml-2">{trackingData.currentStatus.replace('_', ' ')}</span>
+                        </span>
                     </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-6">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                            className={`h-2.5 rounded-full transition-all duration-500 ${getProgressColor(orderTracking.progressPercentage)}`}
-                            style={{ width: `${orderTracking.progressPercentage}%` }}
-                        ></div>
-                    </div>
-                    <p className="text-center text-sm text-slate-600 mt-2">
-                        {orderTracking.progressPercentage}% Complete
-                    </p>
-                </div>
-
-                {/* Tracking Steps */}
-                <div className="mb-6">
-                    <h3 className="font-semibold mb-4 text-slate-800">Order Progress</h3>
+                {/* Tracking Timeline */}
+                <div>
+                    <h3 className="text-lg font-medium text-slate-800 mb-4">Tracking Timeline</h3>
                     <div className="space-y-4">
-                        {orderTracking.steps.map((step, index) => (
+                        {trackingData.timeline && trackingData.timeline.map((event, index) => (
                             <div key={index} className="flex items-start gap-4">
                                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                    step.completed
-                                        ? 'bg-green-500 text-white'
-                                        : 'bg-gray-200 text-gray-500'
+                                    event.status === trackingData.currentStatus 
+                                        ? 'bg-indigo-600 text-white' 
+                                        : 'bg-slate-200 text-slate-600'
                                 }`}>
-                                    {step.completed ? (
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                    ) : (
-                                        <span className="text-xs font-medium">{index + 1}</span>
-                                    )}
+                                    {getStatusIcon(event.status)}
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className={`font-medium ${step.completed ? 'text-green-700' : 'text-slate-700'}`}>
-                                        {step.label}
-                                    </h4>
-                                    <p className="text-slate-600 text-sm">{step.description}</p>
-                                    {step.timestamp && (
-                                        <p className="text-slate-500 text-xs mt-1">
-                                            {(() => {
-                                                try {
-                                                    return new Date(step.timestamp).toLocaleString();
-                                                } catch (error) {
-                                                    return 'Invalid date';
-                                                }
-                                            })()}
-                                        </p>
+                                <div className="flex-1 pb-4 border-l-2 border-slate-200 pl-4">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="font-medium text-slate-800">{event.status.replace('_', ' ')}</h4>
+                                        <span className="text-sm text-slate-500">{new Date(event.timestamp).toLocaleString()}</span>
+                                    </div>
+                                    {event.description && (
+                                        <p className="text-sm text-slate-600 mt-1">{event.description}</p>
                                     )}
                                 </div>
                             </div>
@@ -189,49 +174,33 @@ export default function OrderTracking({ orderId, onClose }) {
                     </div>
                 </div>
 
-                {/* Delivery Information */}
-                {orderTracking.deliveryAddress && (
-                    <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                        <h3 className="font-semibold mb-3 text-slate-800">Delivery Address</h3>
-                        <div className="text-slate-600">
-                            <p>{orderTracking.deliveryAddress.street}</p>
-                            <p>{orderTracking.deliveryAddress.city}, {orderTracking.deliveryAddress.state} {orderTracking.deliveryAddress.zip || ''}</p>
-                            <p>{orderTracking.deliveryAddress.country}</p>
-                            {orderTracking.deliveryAddress.phone && (
-                                <p className="mt-2">📞 {orderTracking.deliveryAddress.phone}</p>
-                            )}
+                {/* Shipping Information */}
+                {trackingData.shippingInfo && (
+                    <div>
+                        <h3 className="text-lg font-medium text-slate-800 mb-4">Shipping Information</h3>
+                        <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-slate-500">Carrier</p>
+                                <p className="font-medium">{trackingData.shippingInfo.carrier || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">Tracking Number</p>
+                                <p className="font-medium">{trackingData.shippingInfo.trackingNumber || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">Estimated Delivery</p>
+                                <p className="font-medium">
+                                    {trackingData.shippingInfo.estimatedDelivery 
+                                        ? new Date(trackingData.shippingInfo.estimatedDelivery).toLocaleDateString()
+                                        : 'N/A'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 )}
-
-                {/* Estimated Delivery */}
-                {orderTracking.estimatedDelivery && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                        <h3 className="font-semibold mb-2 text-blue-800">Estimated Delivery</h3>
-                        <p className="text-blue-700">
-                            {(() => {
-                                try {
-                                    return new Date(orderTracking.estimatedDelivery).toLocaleDateString('en-US', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    });
-                                } catch (error) {
-                                    return 'Invalid date';
-                                }
-                            })()}
-                        </p>
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 transition-colors">
-                        Close
-                    </button>
-                </div>
             </div>
         </div>
     )
 }
+
+export default OrderTracking

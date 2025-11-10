@@ -1,13 +1,9 @@
-'use client'
-import Loading from "@/components/Loading"
+import ModernLoading from "@/components/ModernLoading"
 
-export default function GoogleCallbackLoading() {
+export default function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
-      <div className="text-center">
-        <Loading />
-        <p className="mt-4 text-slate-600">Completing Google authentication...</p>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <ModernLoading />
     </div>
   )
 }

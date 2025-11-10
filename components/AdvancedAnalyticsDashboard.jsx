@@ -8,6 +8,11 @@ import {
   useOrderVolumeByDay, 
   useCustomerAcquisition 
 } from "@/lib/hooks/useAdvancedAnalytics";
+import { useAdminRevenueTrend } from "@/lib/hooks/useAdminRevenueTrend";
+import { useAdminOrderVolume } from "@/lib/hooks/useAdminOrderVolume";
+import { useAdminCustomerTrend } from "@/lib/hooks/useAdminCustomerTrend";
+import { useAdminRecentActivity } from "@/lib/hooks/useAdminRecentActivity";
+import { useAdminTopStores } from "@/lib/hooks/useAdminTopStores";
 import DebugStoreId from "@/components/DebugStoreId";
 import { 
   TrendingUpIcon, 
@@ -45,10 +50,7 @@ const AdvancedAnalyticsDashboard = () => {
   const isStoreOwner = user?.role === 'store';
   const isAdmin = user?.role === 'admin';
   
-  // For admin users, we'll show platform-wide analytics
-  // For store owners, we'll show store-specific analytics
-  
-  // Only call hooks if we have a storeId (for store owners) or if we're admin
+  // For store owners, use store-specific analytics
   const hasStoreId = !!storeId;
   
   // For store owners, use store-specific analytics
@@ -67,8 +69,23 @@ const AdvancedAnalyticsDashboard = () => {
   const { data: storeCustomerAcquisitionData, loading: storeCustomerAcquisitionLoading, error: storeCustomerAcquisitionError } = 
     (isStoreOwner && hasStoreId) ? useCustomerAcquisition(storeId) : { data: null, loading: false, error: null };
   
-  // For admin users, we'll simulate platform-wide analytics or fetch from different endpoints
-  // In a real implementation, you would have specific hooks for admin analytics
+  // For admin users, use the new admin hooks
+  const { data: adminRevenueTrendData, loading: adminRevenueLoading, error: adminRevenueError } = 
+    isAdmin ? useAdminRevenueTrend() : { data: null, loading: false, error: null };
+    
+  const { data: adminOrderVolumeData, loading: adminOrderVolumeLoading, error: adminOrderVolumeError } = 
+    isAdmin ? useAdminOrderVolume() : { data: null, loading: false, error: null };
+    
+  const { data: adminCustomerTrendData, loading: adminCustomerTrendLoading, error: adminCustomerTrendError } = 
+    isAdmin ? useAdminCustomerTrend() : { data: null, loading: false, error: null };
+    
+  const { data: adminRecentActivityData, loading: adminRecentActivityLoading, error: adminRecentActivityError } = 
+    isAdmin ? useAdminRecentActivity() : { data: null, loading: false, error: null };
+    
+  const { data: adminTopStoresData, loading: adminTopStoresLoading, error: adminTopStoresError } = 
+    isAdmin ? useAdminTopStores() : { data: null, loading: false, error: null };
+  
+  // For admin users, we'll show platform-wide analytics
   const adminData = {
     metrics: {
       totalRevenue: 125000,
@@ -77,51 +94,8 @@ const AdvancedAnalyticsDashboard = () => {
       newCustomers: 320,
       totalStores: 42
     },
-    recentActivity: [
-      { title: "New Store Registered", description: "TechGadgets Store has joined the platform", timestamp: new Date() },
-      { title: "High Sales Day", description: "Black Friday sales generated $12,500 in revenue", timestamp: new Date(Date.now() - 86400000) },
-      { title: "New Feature Launched", description: "Mobile app now available on App Store", timestamp: new Date(Date.now() - 172800000) },
-      { title: "System Maintenance", description: "Scheduled maintenance completed successfully", timestamp: new Date(Date.now() - 259200000) },
-      { title: "Customer Milestone", description: "10,000th customer registered on the platform", timestamp: new Date(Date.now() - 345600000) }
-    ]
+    // Remove the simulated recentActivity since we'll use real data
   };
-  
-  // Simulated data for admin charts
-  const adminRevenueTrendData = [
-    { date: 'Jan', revenue: 8500 },
-    { date: 'Feb', revenue: 12200 },
-    { date: 'Mar', revenue: 15600 },
-    { date: 'Apr', revenue: 18900 },
-    { date: 'May', revenue: 22400 },
-    { date: 'Jun', revenue: 25800 }
-  ];
-  
-  const adminStorePerformanceData = [
-    { name: 'TechGadgets', value: 32000 },
-    { name: 'FashionHub', value: 28500 },
-    { name: 'HomeEssentials', value: 21000 },
-    { name: 'SportsWorld', value: 18500 },
-    { name: 'BookNook', value: 12500 }
-  ];
-  
-  const adminOrderVolumeData = [
-    { day: 'Mon', orders: 120 },
-    { day: 'Tue', orders: 95 },
-    { day: 'Wed', orders: 110 },
-    { day: 'Thu', orders: 140 },
-    { day: 'Fri', orders: 180 },
-    { day: 'Sat', orders: 210 },
-    { day: 'Sun', orders: 165 }
-  ];
-  
-  const adminCustomerAcquisitionData = [
-    { date: 'Jan', customers: 420 },
-    { date: 'Feb', customers: 380 },
-    { date: 'Mar', customers: 510 },
-    { date: 'Apr', customers: 460 },
-    { date: 'May', customers: 620 },
-    { date: 'Jun', customers: 580 }
-  ];
   
   const [timeRange, setTimeRange] = useState('30d'); // 7d, 30d, 90d
 
@@ -130,7 +104,7 @@ const AdvancedAnalyticsDashboard = () => {
 
   // Loading state
   if ((isStoreOwner && (storeAdvancedLoading || storeRevenueLoading || storeProductSalesLoading || storeOrderVolumeLoading || storeCustomerAcquisitionLoading)) || 
-      (isAdmin && false)) { // Admin doesn't have real loading states in this simulation
+      (isAdmin && (adminRevenueLoading || adminOrderVolumeLoading || adminCustomerTrendLoading || adminRecentActivityLoading || adminTopStoresLoading))) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -139,13 +113,14 @@ const AdvancedAnalyticsDashboard = () => {
   }
 
   // Error state
-  if ((isStoreOwner && (storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError))) {
+  if ((isStoreOwner && (storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError)) ||
+      (isAdmin && (adminRevenueError || adminOrderVolumeError || adminCustomerTrendError || adminRecentActivityError || adminTopStoresError))) {
     return (
       <div className="p-6">
         {showDebug && <DebugStoreId />}
         <div className="text-center py-8">
           <p className="text-red-600">Error loading analytics: 
-            {storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError}
+            {storeAdvancedError || storeRevenueError || storeProductSalesError || storeOrderVolumeError || storeCustomerAcquisitionError || adminRevenueError || adminOrderVolumeError || adminCustomerTrendError || adminRecentActivityError || adminTopStoresError}
           </p>
         </div>
       </div>
@@ -156,9 +131,10 @@ const AdvancedAnalyticsDashboard = () => {
   const currentData = isStoreOwner ? storeAdvancedData : adminData;
   const revenueTrendData = isStoreOwner ? storeRevenueTrendData : adminRevenueTrendData;
   const productSalesData = isStoreOwner ? storeProductSalesData : null; // Admin doesn't have this chart
-  const storePerformanceData = isAdmin ? adminStorePerformanceData : null; // Only admin has this chart
+  const storePerformanceData = isAdmin ? adminTopStoresData : null; // Use top stores data for admin
   const orderVolumeData = isStoreOwner ? storeOrderVolumeData : adminOrderVolumeData;
-  const customerAcquisitionData = isStoreOwner ? storeCustomerAcquisitionData : adminCustomerAcquisitionData;
+  const customerAcquisitionData = isStoreOwner ? storeCustomerAcquisitionData : adminCustomerTrendData;
+  const recentActivityData = isAdmin ? adminRecentActivityData : (currentData?.recentActivity || []);
 
   return (
     <div className="p-6">
@@ -474,12 +450,12 @@ const AdvancedAnalyticsDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      {currentData?.recentActivity && (
+      {(isStoreOwner || isAdmin) && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-xl font-semibold text-slate-800 mb-6">Recent Activity</h2>
           <div className="space-y-4">
-            {currentData.recentActivity.slice(0, 5).map((activity, index) => (
-              <div key={index} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+            {(isAdmin ? adminRecentActivityData : recentActivityData)?.slice(0, 5).map((activity, index) => (
+              <div key={activity.id || index} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <TrendingUpIcon size={16} className="text-blue-600" />
                 </div>
@@ -487,11 +463,18 @@ const AdvancedAnalyticsDashboard = () => {
                   <p className="font-medium text-slate-800">{activity.title}</p>
                   <p className="text-sm text-slate-600">{activity.description}</p>
                   <p className="text-xs text-slate-500 mt-1">
-                    {new Date(activity.timestamp).toLocaleString()}
+                    {activity.timestamp instanceof Date ? activity.timestamp.toLocaleString() : new Date(activity.timestamp).toLocaleString()}
                   </p>
                 </div>
               </div>
             ))}
+            
+            {(!recentActivityData || recentActivityData.length === 0) && (
+              <div className="text-center py-8 text-slate-500">
+                <TrendingUpIcon size={48} className="mx-auto mb-4 text-slate-300" />
+                <p>No recent activity</p>
+              </div>
+            )}
           </div>
         </div>
       )}

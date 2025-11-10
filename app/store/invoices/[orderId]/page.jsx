@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeftIcon } from "lucide-react"
-import Loading from "@/components/Loading"
+import ModernLoading from "@/components/ModernLoading"
 
 export default function InvoiceDetails() {
     const { orderId } = useParams()
@@ -119,7 +119,7 @@ export default function InvoiceDetails() {
         }
     }
 
-    if (loading) return <Loading />
+    if (loading) return <ModernLoading />
 
     if (error) {
         return (

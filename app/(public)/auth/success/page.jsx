@@ -1,105 +1,58 @@
 'use client'
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { login } from '@/lib/features/auth/authSlice'
-import Loading from '@/components/Loading'
-
-// JWT token decoder utility
-const decodeToken = (token) => {
-    try {
-        const parts = token.split('.')
-        if (parts.length !== 3) {
-            throw new Error('Invalid token format')
-        }
-        const payload = parts[1]
-        const decodedPayload = JSON.parse(atob(payload))
-        return decodedPayload
-    } catch (error) {
-        console.error('Error decoding token:', error)
-        return null
-    }
-}
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useDispatch } from "react-redux"
+import ModernLoading from "@/components/ModernLoading"
+import { setCredentials } from "@/lib/features/auth/authSlice"
+import toast from "react-hot-toast"
 
 export default function AuthSuccess() {
     const router = useRouter()
     const dispatch = useDispatch()
     const searchParams = useSearchParams()
-    const { isAuthenticated } = useSelector(state => state.auth)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const handleAuthSuccess = () => {
-            try {
-                // Get the token from URL parameters
-                const token = searchParams.get('token')
-                
-                // If no token, redirect to sign in
-                if (!token) {
-                    router.push('/signin?error=invalid_token')
-                    return
-                }
-                
-                // Decode token to get user data
-                const decodedToken = decodeToken(token)
-                console.log("Auth Success - Decoded Token:", decodedToken);
-
-                if (decodedToken) {
-                    // Extract storeId from various possible locations
-                    const storeId = decodedToken.storeId || 
-                                   decodedToken.store?.id || 
-                                   decodedToken.store?._id || 
-                                   decodedToken.store ||
-                                   null;
-                    
-                    console.log("Auth Success - Extracted storeId:", storeId);
-                    
-                    // Create user object from token data
-                    const userFromToken = {
-                        id: decodedToken.id || decodedToken.userId,
-                        name: decodedToken.name,
-                        email: decodedToken.email,
-                        role: decodedToken.role || 'user',
-                        storeId: storeId,
-                        ...decodedToken
-                    }
-                    
-                    console.log("Auth Success - User object to save:", userFromToken);
-
-                    // Dispatch the login action
-                    dispatch(login({ user: userFromToken, token }))
-
-                    // Redirect based on user role from token
-                    if (decodedToken.role === 'admin') {
-                        router.push('/admin')
-                    } else if (decodedToken.role === 'store') {
-                        router.push('/store')
-                    } else {
-                        // For regular users, redirect to home page
-                        router.push('/')
-                    }
-                } else {
-                    router.push('/signin?error=token_decode_failed')
-                }
-            } catch (error) {
-                console.error('Auth success error:', error)
-                router.push('/signin?error=server_error')
-            }
-        }
-
-        // Only process if not already authenticated
-        if (!isAuthenticated) {
-            handleAuthSuccess()
-        } else {
-            // If already authenticated, redirect to home
+        const token = searchParams.get('token')
+        
+        if (token) {
+            // Save token to localStorage
+            localStorage.setItem('token', token)
+            
+            // Set credentials in Redux store
+            dispatch(setCredentials({ token }))
+            
+            // Show success message
+            toast.success('Authentication successful!')
+            
+            // Redirect to home page
             router.push('/')
+        } else {
+            // If no token, redirect to signin
+            router.push('/signin')
         }
-    }, [router, searchParams, dispatch, isAuthenticated])
+        
+        // Set loading to false after a short delay to ensure smooth transition
+        const timer = setTimeout(() => {
+            setLoading(false)
+        }, 1000)
+        
+        return () => clearTimeout(timer)
+    }, [searchParams, dispatch, router])
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <ModernLoading />
+            </div>
+        )
+    }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-white">
             <div className="text-center">
-                <Loading />
-                <p className="mt-4 text-slate-600">Completing authentication...</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Successful</h1>
+                <p className="text-gray-600">You will be redirected shortly...</p>
             </div>
         </div>
     )

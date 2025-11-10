@@ -130,14 +130,38 @@ export default function StoreEditProduct() {
             }
 
             // Validate required fields
-            if (!productInfo.name || !productInfo.description || !productInfo.category) {
-                toast.error("Please fill in all required fields")
+            if (!productInfo.name.trim()) {
+                toast.error("Product name is required")
                 setLoading(false)
                 return
             }
 
-            if (productInfo.mrp <= 0 || productInfo.price <= 0) {
-                toast.error("Prices must be greater than 0")
+            if (!productInfo.description.trim()) {
+                toast.error("Product description is required")
+                setLoading(false)
+                return
+            }
+
+            if (!productInfo.category) {
+                toast.error("Please select a category")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.mrp <= 0) {
+                toast.error("Actual price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.price <= 0) {
+                toast.error("Offer price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.price > productInfo.mrp) {
+                toast.error("Offer price cannot be higher than actual price")
                 setLoading(false)
                 return
             }
@@ -183,6 +207,12 @@ export default function StoreEditProduct() {
                 toast.error("Authentication failed. Please log in again.")
             } else if (error.includes('Failed to update product')) {
                 toast.error("Failed to update product. Please check your input and try again.")
+            } else if (error.includes('413')) {
+                toast.error("Product images are too large. Please reduce image sizes and try again.")
+            } else if (error.includes('409')) {
+                toast.error("A product with this name already exists.")
+            } else if (error.includes('400')) {
+                toast.error("Invalid product data. Please check your input and try again.")
             } else {
                 toast.error(error || "Failed to update product. Please check your connection and try again.")
             }

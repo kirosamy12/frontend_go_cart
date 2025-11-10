@@ -1,39 +1,84 @@
 'use client'
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import Loading from "@/components/Loading"
-import { getStoreInvoices } from "@/lib/features/orders/ordersSlice"
 import Link from "next/link"
+import ModernLoading from "@/components/ModernLoading"
 
 export default function StoreInvoices() {
     const dispatch = useDispatch()
-    const { storeInvoices, loading, error } = useSelector(state => state.orders)
+    const { token } = useSelector(state => state.auth)
+    const [storeInvoices, setStoreInvoices] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const [localError, setLocalError] = useState(null)
     const [pagination, setPagination] = useState({
         page: 1,
-        limit: 20,
+        limit: 10,
         total: 0
     })
 
     const fetchInvoices = async () => {
         try {
+            setLoading(true)
             setLocalError(null)
-            const result = await dispatch(getStoreInvoices()).unwrap()
-            if (result) {
-                setPagination({
-                    page: result.page,
-                    limit: result.limit,
-                    total: result.total
-                })
+            
+            if (!token) {
+                throw new Error('No authentication token found. Please log in again.')
             }
+
+            // Add a timeout to the fetch request
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+            // Updated API endpoint
+            const url = 'https://go-cart-1bwm.vercel.app/api/store/invoices'
+            console.log('Fetching invoices from:', url)
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'token': token,
+                },
+                signal: controller.signal
+            })
+
+            clearTimeout(timeoutId)
+
+            console.log('Response status:', response.status)
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                console.log('Error response data:', errorData)
+                if (response.status === 401) {
+                    throw new Error('Authentication failed. Please log in again.')
+                }
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+            }
+
+            const data = await response.json()
+            console.log('Success response data:', data)
+            if (!data.success) throw new Error(data.message || 'Failed to get invoices')
+            
+            setStoreInvoices(data.invoices || [])
+            setPagination(prev => ({
+                ...prev,
+                total: data.total || 0
+            }))
         } catch (error) {
             console.error('Error fetching invoices:', error)
             // Provide more specific error messages
-            if (error.message.includes('Failed to fetch')) {
+            if (error.name === 'AbortError') {
+                setLocalError('Request timeout. Please check your internet connection and try again.')
+            } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
                 setLocalError('Unable to connect to the server. Please check your internet connection and ensure the API server is running. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/invoices')
+            } else if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                console.error('CORS error or network issue:', error);
+                setLocalError('Unable to connect to the server. This may be due to CORS restrictions or network issues. Please try again later or contact support. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/invoices');
             } else {
                 setLocalError(error.message || 'Failed to fetch invoices. Please try again later.')
             }
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -122,7 +167,7 @@ export default function StoreInvoices() {
             )}
 
             {loading ? (
-                <Loading />
+                <ModernLoading />
             ) : !displayError && storeInvoices && storeInvoices.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="bg-gray-100 border border-gray-200 rounded-xl p-8 max-w-md mx-auto">
@@ -232,9 +277,7 @@ export default function StoreInvoices() {
                             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                                 <div>
                                     <p className="text-sm text-gray-700">
-                                        Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
-                                        <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of{' '}
-                                        <span className="font-medium">{pagination.total}</span> results
+                                        Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
                                     </p>
                                 </div>
                                 <div>
@@ -246,14 +289,10 @@ export default function StoreInvoices() {
                                                 }
                                             }}
                                             disabled={pagination.page === 1}
-                                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                                                pagination.page === 1 
-                                                    ? 'text-gray-300 cursor-not-allowed' 
-                                                    : 'text-gray-500 hover:bg-gray-50'
-                                            }`}
+                                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${pagination.page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                                         >
                                             <span className="sr-only">Previous</span>
-                                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                 <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                                             </svg>
                                         </button>
@@ -264,14 +303,10 @@ export default function StoreInvoices() {
                                                 }
                                             }}
                                             disabled={pagination.page * pagination.limit >= pagination.total}
-                                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                                                pagination.page * pagination.limit >= pagination.total
-                                                    ? 'text-gray-300 cursor-not-allowed'
-                                                    : 'text-gray-500 hover:bg-gray-50'
-                                            }`}
+                                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${pagination.page * pagination.limit >= pagination.total ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                                         >
                                             <span className="sr-only">Next</span>
-                                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                             </svg>
                                         </button>

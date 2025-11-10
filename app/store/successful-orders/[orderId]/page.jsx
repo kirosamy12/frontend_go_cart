@@ -1,37 +1,37 @@
 'use client'
 import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useSelector } from "react-redux"
-import Loading from "@/components/Loading"
+import { useDispatch, useSelector } from "react-redux"
+import { useParams } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeftIcon } from "lucide-react"
+import ModernLoading from "@/components/ModernLoading"
 
 export default function SuccessfulOrderDetails() {
-    const router = useRouter()
-    const params = useParams()
-    const { orderId } = params
+    const { orderId } = useParams()
+    const dispatch = useDispatch()
     const { token } = useSelector(state => state.auth)
     const [order, setOrder] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [localError, setLocalError] = useState(null)
 
-    const fetchOrderDetails = async () => {
+    const fetchOrder = async () => {
         try {
             setLoading(true)
-            setError(null)
+            setLocalError(null)
             
-            // Debug logging
-            console.log('Fetching order details with token:', token ? 'Token present' : 'No token')
-            console.log('Order ID:', orderId)
-            
-            // Check if token exists
             if (!token) {
                 throw new Error('No authentication token found. Please log in again.')
             }
-            
+
+            if (!orderId) {
+                throw new Error('Order ID is required')
+            }
+
             // Add a timeout to the fetch request
             const controller = new AbortController()
             const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-            // Use the new endpoint for a single successful order
             const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/orders/successful/${orderId}`, {
                 method: 'GET',
                 headers: {
@@ -42,11 +42,8 @@ export default function SuccessfulOrderDetails() {
 
             clearTimeout(timeoutId)
 
-            console.log('Response status:', response.status)
-            
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
-                console.log('Error response data:', errorData)
                 if (response.status === 401) {
                     throw new Error('Authentication failed. Please log in again.')
                 }
@@ -54,19 +51,21 @@ export default function SuccessfulOrderDetails() {
             }
 
             const data = await response.json()
-            console.log('Success response data:', data)
-            if (!data.success) throw new Error(data.message || 'Failed to get order details')
+            if (!data.success) throw new Error(data.message || 'Failed to get order')
             
-            setOrder(data.order || null)
+            setOrder(data.order)
         } catch (error) {
-            console.error('Error fetching order details:', error)
+            console.error('Error fetching order:', error)
             // Provide more specific error messages
             if (error.name === 'AbortError') {
-                setError('Request timeout. Please check your internet connection and try again.')
+                setLocalError('Request timeout. Please check your internet connection and try again.')
             } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
-                setError('Unable to connect to the server. Please check your internet connection and ensure the API server is running. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/orders/successful/:orderId')
+                setLocalError('Unable to connect to the server. Please check your internet connection and ensure the API server is running. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/orders/successful/:orderId')
+            } else if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                console.error('CORS error or network issue:', error);
+                setLocalError('Unable to connect to the server. This may be due to CORS restrictions or network issues. Please try again later or contact support. The API endpoint being accessed is: https://go-cart-1bwm.vercel.app/api/store/orders/successful/:orderId');
             } else {
-                setError(error.message || 'Failed to fetch order details. Please try again later.')
+                setLocalError(error.message || 'Failed to fetch order. Please try again later.')
             }
         } finally {
             setLoading(false)
@@ -74,10 +73,10 @@ export default function SuccessfulOrderDetails() {
     }
 
     useEffect(() => {
-        if (token && orderId) {
-            fetchOrderDetails()
+        if (orderId) {
+            fetchOrder()
         }
-    }, [token, orderId])
+    }, [orderId])
 
     const formatCurrency = (amount) => {
         // Handle potential null or undefined values
@@ -108,9 +107,27 @@ export default function SuccessfulOrderDetails() {
         }
     }
 
-    if (loading) return <Loading />
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'DELIVERED':
+                return 'bg-green-100 text-green-800'
+            case 'ORDER_PLACED':
+                return 'bg-blue-100 text-blue-800'
+            case 'PROCESSING':
+                return 'bg-yellow-100 text-yellow-800'
+            case 'SHIPPED':
+                return 'bg-indigo-100 text-indigo-800'
+            default:
+                return 'bg-gray-100 text-gray-800'
+        }
+    }
 
-    if (error) {
+    // Show local error if exists, otherwise show Redux error
+    const displayError = localError || error
+
+    if (loading) return <ModernLoading />
+
+    if (displayError) {
         return (
             <div className="max-w-6xl mx-auto">
                 <div className="text-center py-8">
@@ -120,8 +137,8 @@ export default function SuccessfulOrderDetails() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Order Details</h3>
-                        <p className="text-red-700 mb-4">{error}</p>
+                        <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Order</h3>
+                        <p className="text-red-700 mb-4">{displayError}</p>
                         
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                             <p className="text-yellow-800 font-medium mb-2">Troubleshooting Tips:</p>
@@ -135,17 +152,18 @@ export default function SuccessfulOrderDetails() {
                         
                         <div className="flex gap-3 justify-center">
                             <button
-                                onClick={fetchOrderDetails}
+                                onClick={fetchOrder}
                                 className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
                             >
                                 Try Again
                             </button>
-                            <button
-                                onClick={() => router.push('/store/successful-orders')}
-                                className="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+                            <Link 
+                                href="/store/successful-orders"
+                                className="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium flex items-center gap-2"
                             >
+                                <ArrowLeftIcon size={18} />
                                 Back to Orders
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -163,12 +181,13 @@ export default function SuccessfulOrderDetails() {
                         </svg>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">Order Not Found</h3>
                         <p className="text-gray-500">The requested order could not be found.</p>
-                        <button
-                            onClick={() => router.push('/store/successful-orders')}
-                            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+                        <Link 
+                            href="/store/successful-orders"
+                            className="mt-4 inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
                         >
+                            <ArrowLeftIcon size={18} />
                             Back to Orders
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -177,208 +196,198 @@ export default function SuccessfulOrderDetails() {
 
     return (
         <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl text-slate-800 font-semibold">Order <span className="text-blue-600">Details</span></h1>
-                <button
-                    onClick={() => router.push('/store/successful-orders')}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+            <div className="mb-6">
+                <Link 
+                    href="/store/successful-orders"
+                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
                 >
+                    <ArrowLeftIcon size={18} />
                     Back to Orders
-                </button>
+                </Link>
             </div>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 {/* Order Header */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b border-gray-200">
+                <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 border-b border-gray-200">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <h2 className="text-2xl font-bold text-slate-800">Order Details</h2>
+                            <h1 className="text-2xl font-bold text-slate-800">Order Details</h1>
                             <p className="text-slate-600 mt-1">
-                                Placed on {formatDate(order.createdAt)}
+                                Order #{order.id?.substring(0, 8)} • Placed on {formatDate(order.createdAt)}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
-                                order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(order.status)}`}>
                                 {order.status}
                             </span>
-                            {order.isPaid ? (
-                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                                    Paid
-                                </span>
-                            ) : (
-                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                                    Unpaid
-                                </span>
-                            )}
                         </div>
                     </div>
                 </div>
 
                 <div className="p-6">
-                    {/* Customer Information */}
-                    <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Customer Information</h3>
-                        <div className="bg-slate-50 rounded-lg p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm text-slate-500">Name</p>
-                                    <p className="font-medium">{order.customer?.name || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-500">Email</p>
-                                    <p className="font-medium">{order.customer?.email || 'N/A'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Shipping Address */}
-                    {order.address && (
-                        <div className="mb-8">
-                            <h3 className="text-lg font-semibold text-slate-800 mb-4">Shipping Address</h3>
-                            <div className="bg-slate-50 rounded-lg p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm text-slate-500">Street</p>
-                                        <p className="font-medium">{order.address.street || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-slate-500">City</p>
-                                        <p className="font-medium">{order.address.city || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-slate-500">State</p>
-                                        <p className="font-medium">{order.address.state || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-slate-500">Country</p>
-                                        <p className="font-medium">{order.address.country || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-slate-500">Phone</p>
-                                        <p className="font-medium">{order.address.phone || 'N/A'}</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Order Information */}
+                        <div className="lg:col-span-2">
+                            <div className="mb-8">
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4">Order Information</h2>
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-slate-500">Order ID</p>
+                                            <p className="font-medium">#{order.id?.substring(0, 8)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Order Date</p>
+                                            <p className="font-medium">{formatDate(order.createdAt)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Status</p>
+                                            <p className="font-medium">{order.status}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Payment Method</p>
+                                            <p className="font-medium">{order.paymentMethod || 'N/A'}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
 
-                    {/* Order Items */}
-                    {order.orderItems && order.orderItems.length > 0 && (
-                        <div className="mb-8">
-                            <h3 className="text-lg font-semibold text-slate-800 mb-4">Order Items</h3>
-                            <div className="bg-slate-50 rounded-lg overflow-hidden">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-100">
-                                        <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Product
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Color
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Quantity
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Price
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Total
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {order.orderItems.map((item, index) => (
-                                            <tr key={`${orderId}-${index}`}>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        {item.product?.images?.[0] && (
-                                                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-md overflow-hidden">
-                                                                <img 
-                                                                    src={item.product.images[0]} 
-                                                                    alt={item.product.name} 
-                                                                    className="h-full w-full object-cover"
-                                                                    onError={(e) => {
-                                                                        e.target.style.display = 'none';
-                                                                        e.target.parentElement.style.background = '#f3f4f6';
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        <div className="ml-4">
-                                                            <div className="text-sm font-medium text-gray-900">{item.product?.name || 'N/A'}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {item.selectedColor ? (
-                                                        <div className="flex items-center">
-                                                            <div 
-                                                                className="w-4 h-4 rounded-full mr-2 border border-gray-300" 
-                                                                style={{ backgroundColor: item.selectedColor }}
-                                                            ></div>
-                                                            <span>{item.selectedColor}</span>
-                                                        </div>
-                                                    ) : 'N/A'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {item.quantity || 'N/A'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {formatCurrency(item.price)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {formatCurrency(item.lineTotal)}
-                                                </td>
+                            {/* Items */}
+                            <div className="mb-8">
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4">Items</h2>
+                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Product
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Quantity
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Unit Price
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Total
+                                                </th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {order.items && order.items.map((item, index) => (
+                                                <tr key={index}>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center">
+                                                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-md flex items-center justify-center">
+                                                                <svg className="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                                </svg>
+                                                            </div>
+                                                            <div className="ml-4">
+                                                                <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                                                {item.selectedColor && (
+                                                                    <div className="flex items-center mt-1">
+                                                                        <span className="text-xs text-gray-500 mr-2">Color:</span>
+                                                                        <span 
+                                                                            className="inline-block w-4 h-4 rounded-full border border-gray-300" 
+                                                                            style={{ backgroundColor: item.selectedColor }}
+                                                                        ></span>
+                                                                        <span className="text-xs text-gray-500 ml-1">{item.selectedColor}</span>
+                                                                    </div>
+                                                                )}
+                                                                {item.selectedSize && (
+                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                        Size: {item.selectedSize}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {item.quantity}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {formatCurrency(item.unitPrice)}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        {formatCurrency(item.lineTotal)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Order Summary */}
-                    <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Order Summary</h3>
-                        <div className="bg-slate-50 rounded-lg p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm text-slate-500">Payment Method</p>
-                                    <p className="font-medium">{order.paymentMethod || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-slate-500">Order Date</p>
-                                    <p className="font-medium">{formatDate(order.createdAt)}</p>
-                                </div>
-                                {order.deliveredAt && (
-                                    <div>
-                                        <p className="text-sm text-slate-500">Delivered Date</p>
-                                        <p className="font-medium">{formatDate(order.deliveredAt)}</p>
+                        {/* Customer & Payment Information */}
+                        <div>
+                            <div className="mb-8">
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4">Customer Information</h2>
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-sm text-slate-500">Name</p>
+                                            <p className="font-medium">{order.customer?.name || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Email</p>
+                                            <p className="font-medium">{order.customer?.email || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Phone</p>
+                                            <p className="font-medium">{order.customer?.phone || 'N/A'}</p>
+                                        </div>
                                     </div>
-                                )}
-                                <div>
-                                    <p className="text-sm text-slate-500">Total Amount</p>
-                                    <p className="font-medium text-lg">{formatCurrency(order.total)}</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4">Shipping Address</h2>
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-sm text-slate-500">Address</p>
+                                            <p className="font-medium">{order.shippingAddress?.street || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">City</p>
+                                            <p className="font-medium">{order.shippingAddress?.city || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Country</p>
+                                            <p className="font-medium">{order.shippingAddress?.country || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-slate-500">Postal Code</p>
+                                            <p className="font-medium">{order.shippingAddress?.postalCode || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4">Payment Summary</h2>
+                                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                                    <div className="flex justify-between">
+                                        <p className="text-slate-600">Subtotal</p>
+                                        <p className="font-medium">{formatCurrency(order.subtotal)}</p>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <p className="text-slate-600">Shipping</p>
+                                        <p className="font-medium">{formatCurrency(order.shippingCost)}</p>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <p className="text-slate-600">Tax</p>
+                                        <p className="font-medium">{formatCurrency(order.tax)}</p>
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-3 flex justify-between">
+                                        <p className="text-slate-600 font-medium">Total</p>
+                                        <p className="font-bold text-lg">{formatCurrency(order.total)}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => router.push('/store/successful-orders')}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
-                        >
-                            Back to Orders
-                        </button>
                     </div>
                 </div>
             </div>

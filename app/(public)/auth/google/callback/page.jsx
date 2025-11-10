@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { googleLogin } from '@/lib/features/auth/authSlice'
-import Loading from '@/components/Loading'
+import ModernLoading from '@/components/ModernLoading'
 
 // JWT token decoder utility
 const decodeToken = (token) => {
@@ -119,7 +119,7 @@ export default function GoogleCallback() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
             <div className="text-center">
-                <Loading />
+                <ModernLoading />
                 <p className="mt-4 text-slate-600">Completing Google authentication...</p>
             </div>
         </div>

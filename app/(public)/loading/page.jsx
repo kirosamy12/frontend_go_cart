@@ -1,22 +1,11 @@
 'use client'
 
-import Loading from "@/components/Loading"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import ModernLoading from "@/components/ModernLoading"
 
 export default function LoadingPage() {
-    const router = useRouter()
-
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search)
-        const url = params.get('nextUrl')
-
-        if (url) {
-            setTimeout(() => {
-                router.push(url)
-            }, 8000)
-        }
-    }, [router])
-
-    return <Loading />
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <ModernLoading />
+    </div>
+  )
 }

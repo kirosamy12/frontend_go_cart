@@ -1,270 +1,207 @@
 'use client'
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useSearchParams } from 'next/navigation'
-import Loading from "@/components/Loading"
-import OrderTracking from "@/components/OrderTracking"
-import { getStoreOrders, updateOrderStatus } from "@/lib/features/orders/ordersSlice"
+import Link from "next/link"
+import ModernLoading from "@/components/ModernLoading"
+import { ArrowRightIcon } from "lucide-react"
 
 export default function StoreOrders() {
     const dispatch = useDispatch()
-    const { storeOrders, loading, error } = useSelector(state => state.orders)
-    const [selectedOrder, setSelectedOrder] = useState(null)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [isTrackingOpen, setIsTrackingOpen] = useState(false)
-    const searchParams = useSearchParams()
-    const statusFilter = searchParams.get('status')
+    const { token } = useSelector(state => state.auth)
+    const [storeOrders, setStoreOrders] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
 
-    const fetchOrders = async () => {
-        dispatch(getStoreOrders())
-    }
-
-    const handleUpdateOrderStatus = async (orderId, status) => {
-        console.log('Updating order status:', { orderId, status });
-        if (!orderId) {
-            console.error('Cannot update order status: orderId is undefined');
-            return;
-        }
+    const fetchStoreOrders = async () => {
         try {
-            await dispatch(updateOrderStatus({ orderId, status })).unwrap();
+            setLoading(true)
+            setError(null)
+            
+            if (!token) {
+                throw new Error('No authentication token found. Please log in again.')
+            }
+
+            const response = await fetch('https://go-cart-1bwm.vercel.app/api/store/orders', {
+                headers: {
+                    'token': token,
+                }
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                if (response.status === 401) {
+                    throw new Error('Authentication failed. Please log in again.')
+                }
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+            }
+
+            const data = await response.json()
+            if (!data.success) throw new Error(data.message || 'Failed to get orders')
+            
+            setStoreOrders(data.orders || [])
         } catch (error) {
-            console.error('Failed to update order status:', error);
-            // You might want to show a toast notification here
+            console.error('Error fetching store orders:', error)
+            setError(error.message || 'Failed to fetch orders. Please try again later.')
+        } finally {
+            setLoading(false)
         }
-    }
-
-    const openModal = (order) => {
-        setSelectedOrder(order)
-        setIsModalOpen(true)
-    }
-
-    const closeModal = () => {
-        setSelectedOrder(null)
-        setIsModalOpen(false)
-    }
-
-    const openTracking = (orderId) => {
-        setSelectedOrder({ id: orderId })
-        setIsTrackingOpen(true)
-    }
-
-    const closeTracking = () => {
-        setSelectedOrder(null)
-        setIsTrackingOpen(false)
     }
 
     useEffect(() => {
-        fetchOrders()
-    }, [dispatch])
+        fetchStoreOrders()
+    }, [])
 
-    // Filter orders based on status if provided
-    const filteredOrders = statusFilter 
-        ? storeOrders.filter(order => order.status === statusFilter.toUpperCase())
-        : storeOrders
+    const formatCurrency = (amount) => {
+        // Handle potential null or undefined values
+        if (!amount && amount !== 0) return 'N/A'
+        
+        // Assuming amounts are in cents, convert to dollars
+        const dollars = amount / 100
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+        }).format(dollars)
+    }
 
-    if (loading) return <Loading />
+    const formatDate = (dateString) => {
+        // Handle potential null or undefined values
+        if (!dateString) return 'N/A'
+        
+        try {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            })
+        } catch (e) {
+            return 'Invalid Date'
+        }
+    }
 
-    if (error) {
-        return (
-            <div className="text-center py-8">
-                <p className="text-red-500">Error loading orders: {error}</p>
-                <button
-                    onClick={fetchOrders}
-                    className="mt-4 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900"
-                >
-                    Try Again
-                </button>
-            </div>
-        )
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'DELIVERED':
+                return 'bg-green-100 text-green-800'
+            case 'ORDER_PLACED':
+                return 'bg-blue-100 text-blue-800'
+            case 'PROCESSING':
+                return 'bg-yellow-100 text-yellow-800'
+            case 'SHIPPED':
+                return 'bg-indigo-100 text-indigo-800'
+            default:
+                return 'bg-gray-100 text-gray-800'
+        }
     }
 
     return (
-        <div>
+        <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl text-slate-800 font-semibold mb-5">Store <span className="text-blue-600">Orders</span></h1>
-            {filteredOrders.length === 0 ? (
-                <p>No orders found</p>
-            ) : (
-                <div className="overflow-x-auto max-w-6xl rounded-md shadow border border-gray-200">
-                    <table className="w-full text-sm text-left text-gray-600">
-                        <thead className="bg-gray-50 text-gray-700 text-xs uppercase tracking-wider">
-                            <tr>
-                                {['Sr. No.', 'Customer', 'Total', 'Payment', 'Status', 'Items', 'Date'].map((heading) => (
-                                    <th key={heading} className="px-4 py-3">{heading}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filteredOrders.map((order, index) => (
-                                <tr
-                                    key={order.id || order._id || order.orderId || (order._id && order._id._id) || index}
-                                    className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-                                    onClick={() => openModal(order)}
-                                >
-                                    <td className="pl-6 text-green-600" >
-                                        {index + 1}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <p>{order.customer?.name}</p>
-                                        <p className="text-xs text-slate-500">{order.customer?.email}</p>
-                                    </td>
-                                    <td className="px-4 py-3 font-medium text-slate-800">${order.total}</td>
-                                    <td className="px-4 py-3">
-                                        <p>{order.paymentMethod}</p>
-                                        <p className="text-xs text-slate-500">{order.isPaid ? 'Paid' : 'Not Paid'}</p>
-                                    </td>
-                                    <td className="px-4 py-3" onClick={(e) => { e.stopPropagation() }}>
-                                        <select
-                                            value={order.status}
-                                            onChange={e => {
-                                                // Try to get the order ID from various possible properties
-                                                const orderId = order.id || order._id || order.orderId || (order._id && order._id._id);
-                                                console.log('Order ID:', orderId);
-                                                if (!orderId) {
-                                                    console.error('Order ID is undefined:', order);
-                                                    return;
-                                                }
-                                                handleUpdateOrderStatus(orderId, e.target.value);
-                                            }}
-                                            className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
-                                        >
-                                            <option key="ORDER_PLACED" value="ORDER_PLACED">ORDER_PLACED</option>
-                                            <option key="PROCESSING" value="PROCESSING">PROCESSING</option>
-                                            <option key="SHIPPED" value="SHIPPED">SHIPPED</option>
-                                            <option key="DELIVERED" value="DELIVERED">DELIVERED</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {order.orderItems?.length || 0} item(s)
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-500">
-                                        {new Date(order.createdAt).toLocaleString()}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {/* Enhanced Modal */}
-            {isModalOpen && selectedOrder && (
-                <div onClick={closeModal} className="fixed inset-0 flex items-center justify-center bg-black/50 text-slate-700 text-sm backdrop-blur-xs z-50" >
-                    <div onClick={e => e.stopPropagation()} className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-semibold text-slate-900 mb-6 text-center">
-                            Order Details - #{selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id) || 'N/A'}
-                        </h2>
-
-                        {/* Order Summary */}
-                        <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Order ID</p>
-                                    <p className="font-medium">{selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id) || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Status</p>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                        selectedOrder.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                                        selectedOrder.status === 'SHIPPED' ? 'bg-yellow-100 text-yellow-700' :
-                                        selectedOrder.status === 'PROCESSING' ? 'bg-blue-100 text-blue-700' :
-                                        selectedOrder.status === 'ORDER_PLACED' ? 'bg-indigo-100 text-indigo-700' :
-                                        'bg-gray-100 text-gray-700'
-                                    }`}>
-                                        {selectedOrder.status}
-                                    </span>
-                                </div>
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Total</p>
-                                    <p className="font-medium">${selectedOrder.total}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Payment Method</p>
-                                    <p className="font-medium">{selectedOrder.paymentMethod}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Payment Status</p>
-                                    <p className="font-medium">{selectedOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-500 text-xs uppercase">Coupon Used</p>
-                                    <p className="font-medium">{selectedOrder.isCouponUsed ? 'Yes' : 'No'}</p>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <p className="text-slate-500 text-xs uppercase">Order Date</p>
-                                    <p className="font-medium">
-                                        {(() => {
-                                            try {
-                                                return new Date(selectedOrder.createdAt).toLocaleString();
-                                            } catch (error) {
-                                                return 'Invalid date';
-                                            }
-                                        })()}
-                                    </p>
-                                </div>
-                            </div>
+            
+            {error && (
+                <div className="text-center py-8">
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-2xl mx-auto">
+                        <div className="mb-4">
+                            <svg className="w-16 h-16 text-red-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
                         </div>
-
-                        {/* Customer Info */}
-                        <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                            <h3 className="font-semibold mb-2">Customer Information</h3>
-                            <p><strong>Name:</strong> {selectedOrder.customer?.name}</p>
-                            <p><strong>Email:</strong> {selectedOrder.customer?.email}</p>
-                            <p><strong>Phone:</strong> {selectedOrder.customer?.phone || 'N/A'}</p>
+                        <h3 className="text-xl font-bold text-red-900 mb-2">Error Loading Orders</h3>
+                        <p className="text-red-700 mb-4">{error}</p>
+                        
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <p className="text-yellow-800 font-medium mb-2">Troubleshooting Tips:</p>
+                            <ul className="text-left text-sm text-yellow-700 space-y-1 max-w-md mx-auto">
+                                <li key="tip1">• Check your internet connection</li>
+                                <li key="tip2">• Verify the API server is running</li>
+                                <li key="tip3">• Try refreshing the page</li>
+                                <li key="tip4">• Ensure you have proper permissions</li>
+                            </ul>
                         </div>
-
-                        {/* Shipping Address */}
-                        {selectedOrder.address && (
-                            <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                                <h3 className="font-semibold mb-2">Shipping Address</h3>
-                                <p><strong>Street:</strong> {selectedOrder.address.street}</p>
-                                <p><strong>City:</strong> {selectedOrder.address.city}</p>
-                                <p><strong>State:</strong> {selectedOrder.address.state}</p>
-                                <p><strong>Country:</strong> {selectedOrder.address.country}</p>
-                                <p><strong>Phone:</strong> {selectedOrder.address.phone}</p>
-                            </div>
-                        )}
-
-                        {/* Order Items */}
-                        <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                            <h3 className="font-semibold mb-2">Order Items</h3>
-                            <div className="space-y-4">
-                                {selectedOrder.orderItems?.map(item => (
-                                    <div key={item.product.id} className="border border-slate-200 rounded-lg p-4">
-                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                                            <div>
-                                                <p className="font-medium text-slate-800">{item.product.name}</p>
-                                                <p className="text-sm text-slate-600">Product ID: {item.product.id}</p>
-                                            </div>
-                                            <div className="mt-2 md:mt-0">
-                                                <p className="font-medium text-slate-800">${item.price} × {item.quantity} = ${item.price * item.quantity}</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {item.selectedColor && (
-                                                <span className="text-xs px-2 py-1 bg-slate-100 rounded">
-                                                    Color: <span style={{display: 'inline-block', width: '12px', height: '12px', backgroundColor: item.selectedColor, border: '1px solid #ccc', marginLeft: '4px', verticalAlign: 'middle'}}></span> {item.selectedColor}
-                                                </span>
-                                            )}
-                                            {item.selectedSize && (
-                                                <span className="text-xs px-2 py-1 bg-slate-100 rounded">
-                                                    Size: {item.selectedSize}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <button onClick={closeModal} className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
+                        
+                        <button
+                            onClick={fetchStoreOrders}
+                            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg transition-colors font-medium"
+                        >
+                            Try Again
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Order Tracking Modal */}
-            {isTrackingOpen && selectedOrder && (
-                <OrderTracking orderId={selectedOrder.id || selectedOrder._id || selectedOrder.orderId || (selectedOrder._id && selectedOrder._id._id)} onClose={closeTracking} />
-            )}
+            {loading ? (
+                <ModernLoading />
+            ) : !error && storeOrders && storeOrders.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="bg-gray-100 border border-gray-200 rounded-xl p-8 max-w-md mx-auto">
+                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">No orders found</h3>
+                        <p className="text-gray-500">You don't have any orders yet.</p>
+                    </div>
+                </div>
+            ) : !error && storeOrders ? (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Order ID
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Customer
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Total
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {storeOrders.map((order) => (
+                                    <tr key={order.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            #{order.id?.substring(0, 8)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {order.customer?.name || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {formatDate(order.createdAt)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {formatCurrency(order.total)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <Link 
+                                                href={`/store/orders/${order.id}`}
+                                                className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                                            >
+                                                View Details
+                                                <ArrowRightIcon size={16} />
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ) : null}
         </div>
     )
 }

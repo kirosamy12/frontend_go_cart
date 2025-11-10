@@ -1,7 +1,7 @@
 'use client'
 import { storesDummyData } from "@/assets/assets"
 import StoreInfo from "@/components/admin/StoreInfo"
-import Loading from "@/components/Loading"
+import ModernLoading from "@/components/ModernLoading"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
@@ -94,5 +94,5 @@ export default function AdminStores() {
             )
             }
         </div>
-    ) : <Loading />
+    ) : <ModernLoading />
 }

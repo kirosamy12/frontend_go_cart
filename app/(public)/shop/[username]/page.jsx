@@ -3,7 +3,7 @@ import ProductCard from "@/components/ProductCard"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { MailIcon, MapPinIcon } from "lucide-react"
-import Loading from "@/components/Loading"
+import ModernLoading from "@/components/ModernLoading"
 import Image from "next/image"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchStoreProductsByUsername } from "@/lib/features/product/productSlice"
@@ -45,7 +45,7 @@ export default function StoreShop() {
     }, [username, dispatch])
 
     if (loading || productsLoading) {
-        return <Loading />
+        return <ModernLoading />
     }
 
     if (error) {

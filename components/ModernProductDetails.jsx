@@ -21,6 +21,7 @@ const ModernProductDetails = ({ product }) => {
 
     const [mainImage, setMainImage] = useState('/placeholder-image.jpg');
     const [selectedColor, setSelectedColor] = useState('');
+    const [selectedSize, setSelectedSize] = useState(''); // Add state for selected size
     const [isWishlisted, setIsWishlisted] = useState(false);
 
     // Set main image when product changes
@@ -30,12 +31,19 @@ const ModernProductDetails = ({ product }) => {
         }
     }, [product]);
 
-    // Set default selected color when product changes
+    // Set default selected color and size when product changes
     useEffect(() => {
         if (product?.colors && product.colors.length > 0) {
             setSelectedColor(product.colors[0]);
         } else {
             setSelectedColor('');
+        }
+        
+        // Set default selected size when product changes
+        if (product?.sizes && product.sizes.length > 0) {
+            setSelectedSize(product.sizes[0]);
+        } else {
+            setSelectedSize('');
         }
     }, [product]);
 
@@ -49,7 +57,8 @@ const ModernProductDetails = ({ product }) => {
             dispatch(addToCartAsync({
                 productId,
                 quantity: 1,
-                selectedColor: selectedColor || null
+                selectedColor: selectedColor || null,
+                selectedSize: selectedSize || null // Include selected size
             }))
         }
     }
@@ -201,6 +210,33 @@ const ModernProductDetails = ({ product }) => {
                                 </div>
                             )}
                             
+                            {/* Size Selection */}
+                            {product?.sizes && product.sizes.length > 0 && (
+                                <div>
+                                    <p className="text-sm font-medium text-slate-700 mb-3">Select Size</p>
+                                    <div className="flex gap-3 flex-wrap">
+                                        {product.sizes.map((size, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => setSelectedSize(size)}
+                                                className={`px-4 py-2 border rounded-lg font-medium transition-all ${
+                                                    selectedSize === size
+                                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                                        : 'border-slate-300 hover:border-slate-500 text-slate-700'
+                                                }`}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {selectedSize && (
+                                        <p className="text-sm text-slate-500 mt-2">
+                                            Selected: <span className="font-medium">{selectedSize}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                            
                             {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row gap-4 pt-4">
                                 {cartItems[productId] ? (
@@ -211,7 +247,8 @@ const ModernProductDetails = ({ product }) => {
                                 ) : (
                                     <button
                                         onClick={addToCartHandler}
-                                        disabled={product?.colors && product.colors.length > 0 && !selectedColor}
+                                        disabled={(product?.colors && product.colors.length > 0 && !selectedColor) || 
+                                                 (product?.sizes && product.sizes.length > 0 && !selectedSize)}
                                         className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         <ShoppingCart size={20} />
@@ -221,7 +258,9 @@ const ModernProductDetails = ({ product }) => {
                                 
                                 <button
                                     onClick={() => cartItems[productId] ? router.push('/cart') : addToCartHandler()}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2"
+                                    disabled={(product?.colors && product.colors.length > 0 && !selectedColor) || 
+                                             (product?.sizes && product.sizes.length > 0 && !selectedSize)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3.5 font-medium rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {cartItems[productId] ? 'View Cart' : 'Buy Now'}
                                 </button>
