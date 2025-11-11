@@ -64,6 +64,12 @@ export default function StoreAddProduct() {
         setImages(files)
     }
 
+    const removeImage = (index) => {
+        const newImages = [...images]
+        newImages.splice(index, 1)
+        setImages(newImages)
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -137,33 +143,37 @@ export default function StoreAddProduct() {
             <h1 className="text-2xl font-bold text-gray-800">Add Product</h1>
 
             <div className="flex flex-wrap gap-4 w-full">
-                {images[0] ? (
-                    <label htmlFor="image" className="cursor-pointer">
+                <label htmlFor="image" className="cursor-pointer w-48 h-48 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
+                    <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
+                    <span className="mt-2 text-sm text-gray-500">Click to upload images</span>
+                    <span className="text-xs text-gray-400 mt-1">(You can select multiple images)</span>
+                    <input 
+                        onChange={handleImageUpload} 
+                        type="file" 
+                        id="image" 
+                        hidden 
+                        multiple 
+                        accept="image/*"
+                    />
+                </label>
+
+                {images.map((image, index) => (
+                    <div key={index} className="relative">
                         <Image
-                            src={URL.createObjectURL(images[0])}
-                            width={200}
-                            height={200}
-                            alt="Product Image"
+                            src={URL.createObjectURL(image)}
+                            width={100}
+                            height={100}
+                            alt={`Product Image ${index + 1}`}
                             className="rounded-md object-cover border border-gray-300"
                         />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
-                    </label>
-                ) : (
-                    <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                        <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
-                    </label>
-                )}
-
-                {images.slice(1).map((image, index) => (
-                    <Image
-                        key={index}
-                        src={URL.createObjectURL(image)}
-                        width={100}
-                        height={100}
-                        alt={`Product Image ${index + 2}`}
-                        className="rounded-md object-cover border border-gray-300"
-                    />
+                        <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        >
+                            ×
+                        </button>
+                    </div>
                 ))}
             </div>
 
