@@ -30,6 +30,42 @@ const ProductCard = ({ product }) => {
         }
     }
 
+    // Handle different possible structures for sizes data
+    const getSizes = () => {
+        if (!product) return [];
+        
+        // Check multiple possible locations for sizes data
+        if (Array.isArray(product.sizes)) {
+            return product.sizes;
+        }
+        
+        if (Array.isArray(product.size)) {
+            return product.size;
+        }
+        
+        if (typeof product.sizes === 'string') {
+            try {
+                const parsed = JSON.parse(product.sizes);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        if (typeof product.size === 'string') {
+            try {
+                const parsed = JSON.parse(product.size);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        return [];
+    };
+
+    const sizes = getSizes();
+
     return (
         <Link href={`/product/${product?.id || product?._id}`} className='group relative'>
             <div className='bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col'>
@@ -122,15 +158,15 @@ const ProductCard = ({ product }) => {
                             )}
                             
                             {/* Sizes displayed as small badges */}
-                            {product?.sizes && product.sizes.length > 0 && (
+                            {sizes && sizes.length > 0 && (
                                 <div className="flex items-center gap-1">
-                                    {product.sizes.slice(0, 3).map((size, index) => (
+                                    {sizes.slice(0, 3).map((size, index) => (
                                         <div key={index} className="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
                                             {size}
                                         </div>
                                     ))}
-                                    {product.sizes.length > 3 && (
-                                        <span className="text-xs text-slate-500">+{product.sizes.length - 3}</span>
+                                    {sizes.length > 3 && (
+                                        <span className="text-xs text-slate-500">+{sizes.length - 3}</span>
                                     )}
                                 </div>
                             )}
