@@ -92,8 +92,8 @@ export default function StoreAddProduct() {
             formData.append('colors', JSON.stringify(productInfo.colors))
             formData.append('sizes', JSON.stringify(productInfo.sizes))
 
-            // Append images with the correct field name
-            // Try both 'images' and 'image' field names to see which one works
+            // Append images as an array - this is the key fix
+            // Append each image with the same field name so the backend receives them as an array
             images.forEach((image, index) => {
                 formData.append('images', image)
             })
@@ -146,7 +146,7 @@ export default function StoreAddProduct() {
                             alt="Product Image"
                             className="rounded-md object-cover border border-gray-300"
                         />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
                     </label>
                 ) : (
                     <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
