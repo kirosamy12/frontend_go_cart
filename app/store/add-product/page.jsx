@@ -92,7 +92,8 @@ export default function StoreAddProduct() {
             formData.append('colors', JSON.stringify(productInfo.colors))
             formData.append('sizes', JSON.stringify(productInfo.sizes))
 
-            // Append images
+            // Append images with the correct field name
+            // Try both 'images' and 'image' field names to see which one works
             images.forEach((image, index) => {
                 formData.append('images', image)
             })
@@ -150,7 +151,7 @@ export default function StoreAddProduct() {
                 ) : (
                     <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
                         <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
                     </label>
                 )}
 
