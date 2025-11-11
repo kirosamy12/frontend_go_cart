@@ -5,6 +5,7 @@ import Link from 'next/link'
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice'
+import { getColorName } from '@/lib/utils/colorUtils'
 
 const ProductCard = ({ product }) => {
 
@@ -101,7 +102,7 @@ const ProductCard = ({ product }) => {
                             </span>
                         </div>
                         
-                        {/* Colors and Sizes - Updated to show colors as text and sizes normally */}
+                        {/* Colors and Sizes - Updated to show color names instead of codes */}
                         <div className="flex flex-wrap gap-2 mb-2">
                             {product?.colors && product.colors.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
@@ -111,7 +112,7 @@ const ProductCard = ({ product }) => {
                                             className="text-xs px-2 py-1 bg-slate-100 rounded-full text-slate-700"
                                             title={color}
                                         >
-                                            {color}
+                                            {getColorName(color)}
                                         </span>
                                     ))}
                                     {product.colors.length > 3 && (
