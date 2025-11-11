@@ -61,7 +61,8 @@ export default function StoreAddProduct() {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
-        setImages(files)
+        // Add new images to existing images instead of replacing them
+        setImages(prevImages => [...prevImages, ...files])
     }
 
     const removeImage = (index) => {
@@ -143,31 +144,14 @@ export default function StoreAddProduct() {
             <h1 className="text-2xl font-bold text-gray-800">Add Product</h1>
 
             <div className="flex flex-wrap gap-4 w-full">
-                {images[0] ? (
-                    <label htmlFor="image" className="cursor-pointer">
-                        <Image
-                            src={URL.createObjectURL(images[0])}
-                            width={200}
-                            height={200}
-                            alt="Product Image"
-                            className="rounded-md object-cover border border-gray-300"
-                        />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
-                    </label>
-                ) : (
-                    <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                        <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
-                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
-                    </label>
-                )}
-
-                {images.slice(1).map((image, index) => (
+                {/* Display all uploaded images */}
+                {images.map((image, index) => (
                     <div key={index} className="relative">
                         <Image
                             src={URL.createObjectURL(image)}
                             width={100}
                             height={100}
-                            alt={`Product Image ${index + 2}`}
+                            alt={`Product Image ${index + 1}`}
                             className="rounded-md object-cover border border-gray-300"
                         />
                         <button
@@ -179,6 +163,19 @@ export default function StoreAddProduct() {
                         </button>
                     </div>
                 ))}
+
+                {/* Upload button - always visible */}
+                <label htmlFor="image-upload" className="cursor-pointer w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
+                    <div className="text-gray-400 text-2xl">+</div>
+                    <input 
+                        onChange={handleImageUpload} 
+                        type="file" 
+                        id="image-upload" 
+                        hidden 
+                        multiple 
+                        accept="image/*"
+                    />
+                </label>
             </div>
 
             <div className="flex flex-col gap-2 w-full">
