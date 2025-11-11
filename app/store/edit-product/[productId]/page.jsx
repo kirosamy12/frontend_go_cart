@@ -8,6 +8,7 @@ import { updateProduct, fetchProduct } from "@/lib/features/product/productSlice
 import { fetchCategories } from "@/lib/features/category/categorySlice"
 import { useParams, useRouter } from "next/navigation"
 import ColorPicker from "@/components/ColorPicker"
+import SizePicker from "@/components/SizePicker"
 
 export default function StoreEditProduct() {
     const { productId } = useParams()
@@ -30,6 +31,7 @@ export default function StoreEditProduct() {
         colors: [],
     })
     const [loading, setLoading] = useState(false)
+    const [sizes, setSizes] = useState([])
 
     useEffect(() => {
         if (productId) {
@@ -50,6 +52,7 @@ export default function StoreEditProduct() {
                 colors: product.colors || [],
             })
             setExistingImages(product.images || [])
+            setSizes(product.sizes || [])
         }
     }, [product])
 
@@ -112,14 +115,38 @@ export default function StoreEditProduct() {
             }
 
             // Validate required fields
-            if (!productInfo.name || !productInfo.description || !productInfo.category) {
-                toast.error("Please fill in all required fields")
+            if (!productInfo.name.trim()) {
+                toast.error("Product name is required")
                 setLoading(false)
                 return
             }
 
-            if (productInfo.mrp <= 0 || productInfo.price <= 0) {
-                toast.error("Prices must be greater than 0")
+            if (!productInfo.description.trim()) {
+                toast.error("Product description is required")
+                setLoading(false)
+                return
+            }
+
+            if (!productInfo.category) {
+                toast.error("Please select a category")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.mrp <= 0) {
+                toast.error("Actual price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.price <= 0) {
+                toast.error("Offer price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.price > productInfo.mrp) {
+                toast.error("Offer price cannot be higher than actual price")
                 setLoading(false)
                 return
             }
@@ -154,6 +181,11 @@ export default function StoreEditProduct() {
                 formData.append('colors', color)
             })
 
+            // Add sizes as array
+            sizes.forEach(size => {
+                formData.append('sizes', size)
+            })
+
             const result = await dispatch(updateProduct({ id: productId, productData: formData })).unwrap()
             toast.success("Product updated successfully!")
             router.push('/store/manage-product')
@@ -165,6 +197,12 @@ export default function StoreEditProduct() {
                 toast.error("Authentication failed. Please log in again.")
             } else if (error.includes('Failed to update product')) {
                 toast.error("Failed to update product. Please check your input and try again.")
+            } else if (error.includes('413')) {
+                toast.error("Product images are too large. Please reduce image sizes and try again.")
+            } else if (error.includes('409')) {
+                toast.error("A product with this name already exists.")
+            } else if (error.includes('400')) {
+                toast.error("Invalid product data. Please check your input and try again.")
             } else {
                 toast.error(error || "Failed to update product. Please check your connection and try again.")
             }
@@ -244,22 +282,22 @@ export default function StoreEditProduct() {
                 )}
             </div>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="" className="flex flex-col gap-2 my-6">
                 Name
                 <input type="text" name="name" onChange={onChangeHandler} value={productInfo.name} placeholder="Enter product name" className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded" required />
             </label>
 
-            <label htmlFor="" className="flex flex-col gap-2 my-6 ">
+            <label htmlFor="" className="flex flex-col gap-2 my-6">
                 Description
                 <textarea name="description" onChange={onChangeHandler} value={productInfo.description} placeholder="Enter product description" rows={5} className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
             </label>
 
             <div className="flex gap-5">
-                <label htmlFor="" className="flex flex-col gap-2 ">
+                <label htmlFor="" className="flex flex-col gap-2">
                     Actual Price ($)
                     <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
                 </label>
-                <label htmlFor="" className="flex flex-col gap-2 ">
+                <label htmlFor="" className="flex flex-col gap-2">
                     Offer Price ($)
                     <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
                 </label>
@@ -291,6 +329,14 @@ export default function StoreEditProduct() {
                 colors={productInfo.colors}
                 onChange={(colors) => setProductInfo({ ...productInfo, colors })}
             />
+
+            {/* Size Selection */}
+            <div className="my-6">
+                <SizePicker
+                    sizes={sizes}
+                    onChange={setSizes}
+                />
+            </div>
 
             <br />
 

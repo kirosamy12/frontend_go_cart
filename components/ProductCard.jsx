@@ -75,7 +75,6 @@ const ProductCard = ({ product }) => {
                         </div>
                     )}
                     
-
                 </div>
                 
                 {/* Product info */}
@@ -102,33 +101,34 @@ const ProductCard = ({ product }) => {
                             </span>
                         </div>
                         
-                        {/* Colors and Sizes */}
-                        <div className="flex flex-wrap gap-1 mb-2">
+                        {/* Colors and Sizes - Updated to show colors as text and sizes normally */}
+                        <div className="flex flex-wrap gap-2 mb-2">
                             {product?.colors && product.colors.length > 0 && (
-                                <div className="flex gap-1">
+                                <div className="flex flex-wrap gap-1">
                                     {product.colors.slice(0, 3).map((color, index) => (
-                                        <div 
+                                        <span 
                                             key={index} 
-                                            className="w-3 h-3 rounded-full border border-slate-300"
-                                            style={{ backgroundColor: color }}
+                                            className="text-xs px-2 py-1 bg-slate-100 rounded-full text-slate-700"
                                             title={color}
-                                        ></div>
+                                        >
+                                            {color}
+                                        </span>
                                     ))}
                                     {product.colors.length > 3 && (
-                                        <span className="text-xs text-slate-500">+{product.colors.length - 3}</span>
+                                        <span className="text-xs text-slate-500">+{product.colors.length - 3} more</span>
                                     )}
                                 </div>
                             )}
                             
                             {product?.sizes && product.sizes.length > 0 && (
-                                <div className="flex gap-1">
+                                <div className="flex flex-wrap gap-1">
                                     {product.sizes.slice(0, 3).map((size, index) => (
-                                        <div key={index} className="text-xs px-1.5 py-0.5 bg-slate-100 rounded">
+                                        <span key={index} className="text-xs px-2 py-1 bg-slate-100 rounded-full text-slate-700">
                                             {size}
-                                        </div>
+                                        </span>
                                     ))}
                                     {product.sizes.length > 3 && (
-                                        <span className="text-xs text-slate-500">+{product.sizes.length - 3}</span>
+                                        <span className="text-xs text-slate-500">+{product.sizes.length - 3} more</span>
                                     )}
                                 </div>
                             )}
