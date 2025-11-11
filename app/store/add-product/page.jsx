@@ -143,27 +143,31 @@ export default function StoreAddProduct() {
             <h1 className="text-2xl font-bold text-gray-800">Add Product</h1>
 
             <div className="flex flex-wrap gap-4 w-full">
-                <label htmlFor="image" className="cursor-pointer w-48 h-48 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                    <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
-                    <span className="mt-2 text-sm text-gray-500">Click to upload images</span>
-                    <span className="text-xs text-gray-400 mt-1">(You can select multiple images)</span>
-                    <input 
-                        onChange={handleImageUpload} 
-                        type="file" 
-                        id="image" 
-                        hidden 
-                        multiple 
-                        accept="image/*"
-                    />
-                </label>
+                {images[0] ? (
+                    <label htmlFor="image" className="cursor-pointer">
+                        <Image
+                            src={URL.createObjectURL(images[0])}
+                            width={200}
+                            height={200}
+                            alt="Product Image"
+                            className="rounded-md object-cover border border-gray-300"
+                        />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
+                    </label>
+                ) : (
+                    <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
+                        <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden multiple />
+                    </label>
+                )}
 
-                {images.map((image, index) => (
+                {images.slice(1).map((image, index) => (
                     <div key={index} className="relative">
                         <Image
                             src={URL.createObjectURL(image)}
                             width={100}
                             height={100}
-                            alt={`Product Image ${index + 1}`}
+                            alt={`Product Image ${index + 2}`}
                             className="rounded-md object-cover border border-gray-300"
                         />
                         <button
