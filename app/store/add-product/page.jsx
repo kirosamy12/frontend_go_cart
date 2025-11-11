@@ -30,6 +30,7 @@ export default function StoreAddProduct() {
     const [newSize, setNewSize] = useState("")
     const [loading, setLoading] = useState(false)
     const [imagePreviews, setImagePreviews] = useState([]) // For better performance
+    const [uploadProgress, setUploadProgress] = useState(0) // Track upload progress
 
     const onChangeHandler = (e) => {
         const { name, value, type, checked } = e.target
@@ -106,6 +107,7 @@ export default function StoreAddProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
+        setUploadProgress(0)
 
         try {
             if (!isAuthenticated || !token) {
@@ -120,46 +122,97 @@ export default function StoreAddProduct() {
                 return
             }
 
+            // Validate form data
+            if (!productInfo.name.trim()) {
+                toast.error("Product name is required")
+                setLoading(false)
+                return
+            }
+
+            if (!productInfo.description.trim()) {
+                toast.error("Product description is required")
+                setLoading(false)
+                return
+            }
+
+            if (!productInfo.category) {
+                toast.error("Please select a category")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.price <= 0) {
+                toast.error("Offer price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
+            if (productInfo.mrp <= 0) {
+                toast.error("Regular price must be greater than 0")
+                setLoading(false)
+                return
+            }
+
             // Create FormData
             const formData = new FormData()
-            formData.append('name', productInfo.name)
-            formData.append('description', productInfo.description)
+            formData.append('name', productInfo.name.trim())
+            formData.append('description', productInfo.description.trim())
             formData.append('price', productInfo.price)
             formData.append('mrp', productInfo.mrp)
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock)
-            formData.append('colors', JSON.stringify(productInfo.colors))
-            formData.append('sizes', JSON.stringify(productInfo.sizes))
+            
+            // Only append colors and sizes if they have values
+            if (productInfo.colors.length > 0) {
+                formData.append('colors', JSON.stringify(productInfo.colors))
+            }
+            if (productInfo.sizes.length > 0) {
+                formData.append('sizes', JSON.stringify(productInfo.sizes))
+            }
 
             // Append images as an array
             images.forEach((image, index) => {
                 formData.append('images', image)
             })
 
-            // Dispatch action
-            await dispatch(addProduct({ productData: formData, token })).unwrap()
-            toast.success("Product added successfully!")
+            // Log FormData for debugging (uncomment if needed)
+            // for (let [key, value] of formData.entries()) {
+            //     console.log(key, value);
+            // }
 
-            // Reset form
-            setProductInfo({
-                name: "",
-                description: "",
-                mrp: 0,
-                price: 0,
-                category: "",
-                inStock: true,
-                colors: [],
-                sizes: [],
-            })
-            setImages([])
-            setImagePreviews([])
-            setNewSize("")
+            // Dispatch action
+            const result = await dispatch(addProduct({ productData: formData, token }))
+            
+            if (addProduct.fulfilled.match(result)) {
+                toast.success("Product added successfully!")
+                
+                // Reset form
+                setProductInfo({
+                    name: "",
+                    description: "",
+                    mrp: 0,
+                    price: 0,
+                    category: "",
+                    inStock: true,
+                    colors: [],
+                    sizes: [],
+                })
+                setImages([])
+                setImagePreviews([])
+                setNewSize("")
+            } else {
+                // Handle rejected promise
+                const errorMessage = result.payload || "Failed to add product. Please try again."
+                toast.error(errorMessage)
+                console.error("Product creation failed:", errorMessage)
+            }
 
         } catch (error) {
             console.error("Error adding product:", error)
-            toast.error(error.message || "Failed to add product. Please try again.")
+            toast.error("An unexpected error occurred. Please try again.")
         } finally {
             setLoading(false)
+            setUploadProgress(0)
         }
     }
 
@@ -241,11 +294,11 @@ export default function StoreAddProduct() {
             <div className="flex flex-wrap gap-6 w-full">
                 <label htmlFor="" className="flex flex-col gap-2">
                     Regular Price ($)
-                    <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                    <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" min="0.01" step="0.01" className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
                 </label>
                 <label htmlFor="" className="flex flex-col gap-2 ">
                     Offer Price ($)
-                    <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                    <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" min="0.01" step="0.01" rows={5} className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
                 </label>
             </div>
 
@@ -321,13 +374,14 @@ export default function StoreAddProduct() {
             <br />
 
             <button
+                type="submit"
                 disabled={loading || !isAuthenticated || categoriesLoading}
                 className="bg-blue-600 text-white px-6 mt-7 py-3 hover:bg-blue-700 rounded-md transition disabled:opacity-50 flex items-center gap-2"
             >
                 {loading ? (
                     <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Adding...
+                        {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : "Adding..."}
                     </>
                 ) : (
                     "Add Product"
