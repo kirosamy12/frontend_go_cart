@@ -1,398 +1,274 @@
 'use client'
+import { assets } from "@/assets/assets"
+import Image from "next/image"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
+import { toast } from "react-hot-toast"
+import { addProduct } from "@/lib/features/product/productSlice"
+import { fetchCategories } from "@/lib/features/category/categorySlice"
+import ColorPicker from "@/components/ColorPicker"
 import ModernLoading from "@/components/ModernLoading"
-import { PlusIcon } from "lucide-react"
-import toast from "react-hot-toast"
 
-export default function AddProduct() {
-    const router = useRouter()
+export default function StoreAddProduct() {
+
     const dispatch = useDispatch()
-    const { token, user } = useSelector(state => state.auth)
-    const [categories, setCategories] = useState([])
-    const [loading, setLoading] = useState(false)
-    const [dataLoading, setDataLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const { token, isAuthenticated } = useSelector(state => state.auth)
+    const { list: categories, loading: categoriesLoading } = useSelector(state => state.category)
 
-    const storeId = user?.storeId || user?.store?.id || user?.store?._id;
-
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        price: '',
-        stock: '',
-        categoryId: '',
-        images: [],
+    const [images, setImages] = useState([])
+    const [productInfo, setProductInfo] = useState({
+        name: "",
+        description: "",
+        mrp: 0,
+        price: 0,
+        category: "",
+        inStock: true,
+        colors: [],
+        sizes: [], // Add sizes array
     })
 
-    const fetchCategories = async () => {
-        try {
-            setDataLoading(true)
-            setError(null)
-            
-            if (!token) {
-                throw new Error('No authentication token found. Please log in again.')
-            }
+    const [newSize, setNewSize] = useState("")
+    const [loading, setLoading] = useState(false)
 
-            if (!storeId) {
-                throw new Error('Store ID not found. Please create a store first.')
-            }
+    const onChangeHandler = (e) => {
+        const { name, value, type, checked } = e.target
+        setProductInfo({
+            ...productInfo,
+            [name]: type === 'checkbox' ? checked : value
+        })
+    }
 
-            const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/${storeId}/categories`, {
-                headers: {
-                    'token': token,
-                }
+    const handleSizeChange = (e) => {
+        setNewSize(e.target.value)
+    }
+
+    const addSize = () => {
+        if (newSize.trim() && !productInfo.sizes.includes(newSize.trim())) {
+            setProductInfo({
+                ...productInfo,
+                sizes: [...productInfo.sizes, newSize.trim()]
             })
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}))
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.')
-                }
-                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-            }
-
-            const data = await response.json()
-            if (!data.success) throw new Error(data.message || 'Failed to get categories')
-            
-            setCategories(data.categories || [])
-        } catch (error) {
-            console.error('Error fetching categories:', error)
-            setError(error.message || 'Failed to fetch categories. Please try again later.')
-        } finally {
-            setDataLoading(false)
+            setNewSize("")
         }
     }
 
-    useEffect(() => {
-        fetchCategories()
-    }, [])
-
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setFormData({
-            ...formData,
-            [name]: value
+    const removeSize = (sizeToRemove) => {
+        setProductInfo({
+            ...productInfo,
+            sizes: productInfo.sizes.filter(size => size !== sizeToRemove)
         })
     }
 
-    const handleImageChange = (e) => {
+    const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
-        setFormData({
-            ...formData,
-            images: [...formData.images, ...files]
-        })
-    }
-
-    const removeImage = (index) => {
-        const newImages = [...formData.images]
-        newImages.splice(index, 1)
-        setFormData({
-            ...formData,
-            images: newImages
-        })
+        setImages(files)
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        setLoading(true)
+
         try {
-            setLoading(true)
-            setError(null)
-            
-            if (!token) {
-                throw new Error('No authentication token found. Please log in again.')
+            if (!isAuthenticated || !token) {
+                toast.error("Please log in to add products")
+                setLoading(false)
+                return
             }
 
-            if (!storeId) {
-                throw new Error('Store ID not found. Please create a store first.')
+            if (images.length === 0) {
+                toast.error("Please upload at least one image")
+                setLoading(false)
+                return
             }
 
-            // Validate form data
-            if (!formData.name.trim()) {
-                throw new Error('Product name is required.')
-            }
+            // Create FormData
+            const formData = new FormData()
+            formData.append('name', productInfo.name)
+            formData.append('description', productInfo.description)
+            formData.append('price', productInfo.price)
+            formData.append('mrp', productInfo.mrp)
+            formData.append('category', productInfo.category)
+            formData.append('inStock', productInfo.inStock)
+            formData.append('colors', JSON.stringify(productInfo.colors))
+            formData.append('sizes', JSON.stringify(productInfo.sizes))
 
-            if (!formData.description.trim()) {
-                throw new Error('Product description is required.')
-            }
-
-            if (!formData.price || formData.price <= 0) {
-                throw new Error('Valid product price is required.')
-            }
-
-            if (formData.stock === '' || formData.stock < 0) {
-                throw new Error('Valid stock quantity is required.')
-            }
-
-            if (!formData.categoryId) {
-                throw new Error('Please select a category.')
-            }
-
-            if (formData.images.length === 0) {
-                throw new Error('At least one product image is required.')
-            }
-
-            // Create FormData for file upload
-            const formDataToSend = new FormData()
-            formDataToSend.append('name', formData.name)
-            formDataToSend.append('description', formData.description)
-            formDataToSend.append('price', formData.price)
-            formDataToSend.append('stock', formData.stock)
-            formDataToSend.append('categoryId', formData.categoryId)
-            
             // Append images
-            formData.images.forEach((image) => {
-                formDataToSend.append('images', image)
+            images.forEach((image, index) => {
+                formData.append('images', image)
             })
 
-            const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/${storeId}/products`, {
-                method: 'POST',
-                headers: {
-                    'token': token,
-                },
-                body: formDataToSend
+            // Dispatch action
+            await dispatch(addProduct({ productData: formData, token })).unwrap()
+            toast.success("Product added successfully!")
+
+            // Reset form
+            setProductInfo({
+                name: "",
+                description: "",
+                mrp: 0,
+                price: 0,
+                category: "",
+                inStock: true,
+                colors: [],
+                sizes: [],
             })
+            setImages([])
+            setNewSize("")
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}))
-                if (response.status === 401) {
-                    throw new Error('Authentication failed. Please log in again.')
-                } else if (response.status === 400) {
-                    throw new Error(errorData.message || 'Invalid product data. Please check your input and try again.')
-                } else if (response.status === 409) {
-                    throw new Error(errorData.message || 'A product with this name already exists.')
-                } else if (response.status === 413) {
-                    throw new Error('Product images are too large. Please reduce image sizes and try again.')
-                } else if (response.status === 500) {
-                    throw new Error('Server error. Please try again later.')
-                }
-                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-            }
-
-            const data = await response.json()
-            if (!data.success) throw new Error(data.message || 'Failed to create product')
-            
-            toast.success('Product created successfully!')
-            router.push('/store/manage-product')
         } catch (error) {
-            console.error('Error creating product:', error)
-            setError(error.message || 'Failed to create product. Please check your connection and try again.')
-            toast.error(error.message || 'Failed to create product')
+            console.error("Error adding product:", error)
+            toast.error(error.message || "Failed to add product")
         } finally {
             setLoading(false)
         }
     }
 
-    if (!token || !storeId) {
-        return (
-            <div className="max-w-2xl mx-auto">
-                <div className="text-center py-12">
-                    <div className="bg-gray-100 border border-gray-200 rounded-xl p-8 max-w-md mx-auto">
-                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">Access Denied</h3>
-                        <p className="text-gray-500">
-                            {token 
-                                ? "Store not found. Please create a store first." 
-                                : "Please sign in to access this page."}
-                        </p>
-                        <button 
-                            onClick={() => router.push(token ? '/create-store' : '/signin')}
-                            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                        >
-                            {token ? "Create Store" : "Sign In"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    useEffect(() => {
+        dispatch(fetchCategories())
+    }, [dispatch])
 
-    if (dataLoading) {
+    if (categoriesLoading) {
         return <ModernLoading />
     }
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl text-slate-800 font-semibold mb-6">Add <span className="text-blue-600">Product</span></h1>
-            
-            {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                        <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-red-700">{error}</p>
-                    </div>
-                </div>
-            )}
+        <form onSubmit={handleSubmit} className="flex flex-col items-start gap-5 w-full max-w-3xl mx-auto my-8 p-6 bg-white rounded-lg shadow-md">
+            <h1 className="text-2xl font-bold text-gray-800">Add Product</h1>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <div className="space-y-6">
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-                            Product Name
-                        </label>
+            <div className="flex flex-wrap gap-4 w-full">
+                {images[0] ? (
+                    <label htmlFor="image" className="cursor-pointer">
+                        <Image
+                            src={URL.createObjectURL(images[0])}
+                            width={200}
+                            height={200}
+                            alt="Product Image"
+                            className="rounded-md object-cover border border-gray-300"
+                        />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden />
+                    </label>
+                ) : (
+                    <label htmlFor="image" className="cursor-pointer w-48 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
+                        <Image src={assets.upload_area} width={50} height={50} alt="Upload Area" />
+                        <input onChange={handleImageUpload} type="file" id="image" hidden />
+                    </label>
+                )}
+
+                {images.slice(1).map((image, index) => (
+                    <Image
+                        key={index}
+                        src={URL.createObjectURL(image)}
+                        width={100}
+                        height={100}
+                        alt={`Product Image ${index + 2}`}
+                        className="rounded-md object-cover border border-gray-300"
+                    />
+                ))}
+            </div>
+
+            <div className="flex flex-col gap-2 w-full">
+                <label htmlFor="" className="flex flex-col gap-2">
+                    Product Title
+                    <input type="text" name="name" onChange={onChangeHandler} value={productInfo.name} placeholder="Type here" className="w-full p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                </label>
+                <label htmlFor="" className="flex flex-col gap-2">
+                    Product Description
+                    <textarea onChange={onChangeHandler} value={productInfo.description} name="description" placeholder="Write content here" rows={5} className="w-full p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                </label>
+            </div>
+
+            <div className="flex flex-wrap gap-6 w-full">
+                <label htmlFor="" className="flex flex-col gap-2">
+                    Regular Price ($)
+                    <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                </label>
+                <label htmlFor="" className="flex flex-col gap-2 ">
+                    Offer Price ($)
+                    <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+                </label>
+            </div>
+
+            <select onChange={e => setProductInfo({ ...productInfo, category: e.target.value })} value={productInfo.category} className="w-full max-w-sm p-3 my-6 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required>
+                <option value="">Select a category</option>
+                {categoriesLoading ? (
+                    <option disabled>Loading categories...</option>
+                ) : (
+                    categories.map((category) => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                    ))
+                )}
+            </select>
+
+            <label className="flex items-center gap-3 my-6">
+                <input
+                    type="checkbox"
+                    name="inStock"
+                    checked={productInfo.inStock}
+                    onChange={onChangeHandler}
+                    className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                />
+                <span>In Stock</span>
+            </label>
+
+            <ColorPicker
+                colors={productInfo.colors}
+                onChange={(colors) => setProductInfo({ ...productInfo, colors })}
+            />
+
+            {/* Size Selection */}
+            <div className="my-6">
+                <label className="flex flex-col gap-2">
+                    Sizes
+                    <div className="flex gap-2">
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter product name"
+                            value={newSize}
+                            onChange={handleSizeChange}
+                            placeholder="Enter size (e.g., S, M, L, XL)"
+                            className="flex-1 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
                         />
-                    </div>
-
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={4}
-                            required
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter product description"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="price" className="block text-sm font-medium text-slate-700 mb-1">
-                                Price (in cents)
-                            </label>
-                            <input
-                                type="number"
-                                id="price"
-                                name="price"
-                                value={formData.price}
-                                onChange={handleChange}
-                                required
-                                min="1"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Enter price in cents"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="stock" className="block text-sm font-medium text-slate-700 mb-1">
-                                Stock
-                            </label>
-                            <input
-                                type="number"
-                                id="stock"
-                                name="stock"
-                                value={formData.stock}
-                                onChange={handleChange}
-                                required
-                                min="0"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Enter stock quantity"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label htmlFor="categoryId" className="block text-sm font-medium text-slate-700 mb-1">
-                            Category
-                        </label>
-                        <select
-                            id="categoryId"
-                            name="categoryId"
-                            value={formData.categoryId}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        >
-                            <option value="">Select a category</option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Product Images
-                        </label>
-                        <div className="flex items-center justify-center w-full">
-                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <svg className="w-8 h-8 mb-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                    <p className="mb-2 text-sm text-slate-500">
-                                        <span className="font-semibold">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p className="text-xs text-slate-500">
-                                        PNG, JPG, GIF up to 10MB
-                                    </p>
-                                </div>
-                                <input 
-                                    type="file" 
-                                    className="hidden" 
-                                    multiple 
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                />
-                            </label>
-                        </div>
-                        
-                        {formData.images.length > 0 && (
-                            <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                {formData.images.map((image, index) => (
-                                    <div key={index} className="relative">
-                                        <div className="bg-slate-200 border-2 border-dashed rounded-lg w-full h-20" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeImage(index)}
-                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 pt-4">
                         <button
                             type="button"
-                            onClick={() => router.push('/store/manage-product')}
-                            className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors font-medium"
+                            onClick={addSize}
+                            className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition"
                         >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors font-medium disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Creating...
-                                </>
-                            ) : (
-                                <>
-                                    <PlusIcon size={18} />
-                                    Create Product
-                                </>
-                            )}
+                            Add
                         </button>
                     </div>
-                </div>
-            </form>
-        </div>
+                </label>
+
+                {/* Display added sizes */}
+                {productInfo.sizes.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {productInfo.sizes.map((size, index) => (
+                            <div key={index} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                                <span>{size}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => removeSize(size)}
+                                    className="ml-2 text-blue-800 hover:text-blue-900 font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <br />
+
+            <button
+                disabled={loading || !isAuthenticated || categoriesLoading}
+                className="bg-blue-600 text-white px-6 mt-7 py-3 hover:bg-blue-700 rounded-md transition disabled:opacity-50"
+            >
+                {loading ? "Adding..." : "Add Product"}
+            </button>
+
+            {!isAuthenticated && (
+                <p className="text-red-500 text-sm mt-2">Please log in to add products</p>
+            )}
+        </form>
     )
 }
