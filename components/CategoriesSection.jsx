@@ -16,11 +16,8 @@ const CategoriesSection = () => {
 
     if (loading) return <p className="text-center py-12">Loading categories...</p>
 
-    // Generate random product counts for demo purposes
-    const categoriesWithCounts = categories.map(category => ({
-        ...category,
-        productCount: Math.floor(Math.random() * 50) + 10
-    }))
+    // Remove product counts since we don't want to display them
+    const categoriesWithoutCounts = categories
 
     return (
         <div className='py-16 bg-gradient-to-b from-white to-slate-50'>
@@ -32,15 +29,13 @@ const CategoriesSection = () => {
                 />
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 my-12">
-                    {categoriesWithCounts.map((category) => (
+                    {categoriesWithoutCounts.map((category) => (
                         <Link 
                             key={category.id} 
                             href={`/shop?category=${encodeURIComponent(category.slug)}`} 
                             className='flex flex-col items-center justify-center text-center p-6 border rounded-2xl group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-slate-50 hover:from-indigo-50 hover:to-purple-50 hover:-translate-y-1 border-slate-200 relative overflow-hidden'
                         >
-                            <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-xl">
-                                {category.productCount}+
-                            </div>
+                            {/* Removed product count badge */}
                             
                             <div className='relative mb-4'>
                                 {category.image && category.image.trim() !== '' ? (
@@ -64,9 +59,7 @@ const CategoriesSection = () => {
                             
                             <h3 className='text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors'>{category.name}</h3>
                             
-                            <div className='mt-2 text-xs text-slate-500'>
-                                {category.productCount} products
-                            </div>
+                            {/* Removed product count text */}
                             
                             <div className='mt-3 w-8 h-0.5 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
                         </Link>

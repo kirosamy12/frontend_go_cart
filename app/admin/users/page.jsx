@@ -53,6 +53,39 @@ export default function AdminUsers() {
         }
     }
 
+    const updateUserRole = async (userId, newRole) => {
+        // Logic to update user role
+        try {
+            const token = localStorage.getItem('token')
+            const res = await fetch(`https://go-cart-1bwm.vercel.app/api/updateUserRole/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'token': token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: newRole })
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                if (data.success) {
+                    // Update local state
+                    setUsers(prev => prev.map(user =>
+                        user.id === userId ? { ...user, role: newRole } : user
+                    ))
+                    alert('User role updated successfully')
+                } else {
+                    alert(data.message || 'Failed to update user role')
+                }
+            } else {
+                alert('Failed to update user role')
+            }
+        } catch (error) {
+            console.error('Error updating user role:', error)
+            alert('Error updating user role')
+        }
+    }
+
     useEffect(() => {
         fetchUsers()
     }, [])
@@ -73,12 +106,26 @@ export default function AdminUsers() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 pt-2 flex-wrap">
-                                <p>Active</p>
-                                <label className="relative inline-flex items-center cursor-pointer text-gray-900">
-                                    <input type="checkbox" className="sr-only peer" onChange={() => toggleIsActive(user.id)} checked={user.isActive} />
-                                    <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
-                                    <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                                </label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-600">Role:</span>
+                                    <select 
+                                        value={user.role || 'user'}
+                                        onChange={(e) => updateUserRole(user.id, e.target.value)}
+                                        className="border border-slate-300 rounded-md px-2 py-1 text-sm"
+                                    >
+                                        <option value="user">User</option>
+                                        <option value="store">Store</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-600">Active:</span>
+                                    <label className="relative inline-flex items-center cursor-pointer text-gray-900">
+                                        <input type="checkbox" className="sr-only peer" onChange={() => toggleIsActive(user.id)} checked={user.isActive} />
+                                        <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
+                                        <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     ))}
