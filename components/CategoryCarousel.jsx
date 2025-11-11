@@ -63,9 +63,7 @@ const CategoryCarousel = () => {
                                     <h3 className="text-sm font-semibold text-slate-800 text-center group-hover:text-indigo-600 transition-colors">
                                         {category.name}
                                     </h3>
-                                    <div className="mt-1 text-xs text-slate-500">
-                                        {Math.floor(Math.random() * 50) + 10} products
-                                    </div>
+                                    {/* Removed product count */}
                                 </Link>
                             ))}
                         </div>
