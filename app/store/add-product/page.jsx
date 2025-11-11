@@ -29,6 +29,7 @@ export default function StoreAddProduct() {
 
     const [newSize, setNewSize] = useState("")
     const [loading, setLoading] = useState(false)
+    const [imagePreviews, setImagePreviews] = useState([]) // For better performance
 
     const onChangeHandler = (e) => {
         const { name, value, type, checked } = e.target
@@ -61,14 +62,45 @@ export default function StoreAddProduct() {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
-        // Add new images to existing images instead of replacing them
-        setImages(prevImages => [...prevImages, ...files])
+        
+        // Validate file types
+        const validFiles = files.filter(file => 
+            file.type.startsWith('image/') && 
+            (file.type === 'image/jpeg' || file.type === 'image/jpg' || file.type === 'image/png' || file.type === 'image/webp')
+        )
+        
+        if (validFiles.length !== files.length) {
+            toast.error("Please upload only JPG, JPEG, PNG, or WebP images")
+            return
+        }
+        
+        // Validate file sizes (max 5MB each)
+        const largeFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024)
+        if (largeFiles.length > 0) {
+            toast.error("Image size should be less than 5MB")
+            return
+        }
+        
+        // Create previews for better UX
+        const previews = validFiles.map(file => URL.createObjectURL(file))
+        
+        // Update both images and previews
+        setImages(prevImages => [...prevImages, ...validFiles])
+        setImagePreviews(prevPreviews => [...prevPreviews, ...previews])
     }
 
     const removeImage = (index) => {
+        // Clean up object URL to prevent memory leaks
+        URL.revokeObjectURL(imagePreviews[index])
+        
         const newImages = [...images]
+        const newPreviews = [...imagePreviews]
+        
         newImages.splice(index, 1)
+        newPreviews.splice(index, 1)
+        
         setImages(newImages)
+        setImagePreviews(newPreviews)
     }
 
     const handleSubmit = async (e) => {
@@ -99,8 +131,7 @@ export default function StoreAddProduct() {
             formData.append('colors', JSON.stringify(productInfo.colors))
             formData.append('sizes', JSON.stringify(productInfo.sizes))
 
-            // Append images as an array - this is the key fix
-            // Append each image with the same field name so the backend receives them as an array
+            // Append images as an array
             images.forEach((image, index) => {
                 formData.append('images', image)
             })
@@ -121,15 +152,23 @@ export default function StoreAddProduct() {
                 sizes: [],
             })
             setImages([])
+            setImagePreviews([])
             setNewSize("")
 
         } catch (error) {
             console.error("Error adding product:", error)
-            toast.error(error.message || "Failed to add product")
+            toast.error(error.message || "Failed to add product. Please try again.")
         } finally {
             setLoading(false)
         }
     }
+
+    // Clean up object URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            imagePreviews.forEach(preview => URL.revokeObjectURL(preview))
+        }
+    }, [imagePreviews])
 
     useEffect(() => {
         dispatch(fetchCategories())
@@ -145,19 +184,21 @@ export default function StoreAddProduct() {
 
             <div className="flex flex-wrap gap-4 w-full">
                 {/* Display all uploaded images */}
-                {images.map((image, index) => (
+                {imagePreviews.map((preview, index) => (
                     <div key={index} className="relative">
                         <Image
-                            src={URL.createObjectURL(image)}
+                            src={preview}
                             width={100}
                             height={100}
                             alt={`Product Image ${index + 1}`}
                             className="rounded-md object-cover border border-gray-300"
+                            unoptimized={true} // For better performance with local URLs
                         />
                         <button
                             type="button"
                             onClick={() => removeImage(index)}
                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            title="Remove image"
                         >
                             ×
                         </button>
@@ -165,17 +206,25 @@ export default function StoreAddProduct() {
                 ))}
 
                 {/* Upload button - always visible */}
-                <label htmlFor="image-upload" className="cursor-pointer w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
+                <label htmlFor="image-upload" className="cursor-pointer w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md hover:border-blue-400 transition-colors">
                     <div className="text-gray-400 text-2xl">+</div>
+                    <div className="text-xs text-gray-500 mt-1">Add</div>
                     <input 
                         onChange={handleImageUpload} 
                         type="file" 
                         id="image-upload" 
                         hidden 
                         multiple 
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
                     />
                 </label>
+                
+                {/* Image count indicator */}
+                {images.length > 0 && (
+                    <div className="self-center text-sm text-gray-500">
+                        {images.length} image{images.length !== 1 ? 's' : ''} selected
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-col gap-2 w-full">
@@ -273,14 +322,26 @@ export default function StoreAddProduct() {
 
             <button
                 disabled={loading || !isAuthenticated || categoriesLoading}
-                className="bg-blue-600 text-white px-6 mt-7 py-3 hover:bg-blue-700 rounded-md transition disabled:opacity-50"
+                className="bg-blue-600 text-white px-6 mt-7 py-3 hover:bg-blue-700 rounded-md transition disabled:opacity-50 flex items-center gap-2"
             >
-                {loading ? "Adding..." : "Add Product"}
+                {loading ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Adding...
+                    </>
+                ) : (
+                    "Add Product"
+                )}
             </button>
 
             {!isAuthenticated && (
                 <p className="text-red-500 text-sm mt-2">Please log in to add products</p>
             )}
+            
+            {/* Image upload tips */}
+            <div className="text-xs text-gray-500 mt-2">
+                Tip: You can select multiple images at once. Supported formats: JPG, PNG, WebP (max 5MB each)
+            </div>
         </form>
     )
 }
