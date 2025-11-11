@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { createOrder } from "@/lib/features/cart/cartSlice"
 import { 
@@ -16,6 +16,7 @@ import {
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import AddressModal from "@/components/AddressModal"
+import { useShippingCost } from "@/lib/hooks/useShippingCost"
 
 const ModernOrderSummary = ({ totalPrice, items }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
@@ -29,14 +30,22 @@ const ModernOrderSummary = ({ totalPrice, items }) => {
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  
+  // Get shipping cost based on selected address governorate
+  const { shippingCost, loading: shippingLoading, error: shippingError } = useShippingCost(
+    selectedAddress?.state || selectedAddress?.governorate
+  )
 
   // Calculate discount amount
   const discountAmount = appliedCoupon 
     ? (appliedCoupon.discount / 100) * totalPrice 
     : 0
   
-  // Calculate final total
-  const finalTotal = totalPrice - discountAmount
+  // Calculate final total including shipping
+  const subtotal = totalPrice;
+  // Ensure shippingCost is a number
+  const numericShippingCost = isNaN(shippingCost) ? 0 : Number(shippingCost);
+  const finalTotal = subtotal - discountAmount + numericShippingCost;
 
   // Handle coupon application
   const handleApplyCoupon = (e) => {
@@ -69,29 +78,33 @@ const ModernOrderSummary = ({ totalPrice, items }) => {
 
   // Handle placing order
   const handlePlaceOrder = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!selectedAddress) {
-      toast.error('Please select or add an address before placing the order.')
-      return
+      toast.error('Please select or add an address before placing the order.');
+      return;
     }
     
-    if (isProcessing) return
-    setIsProcessing(true)
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    // Ensure shippingCost is a number before sending
+    const numericShippingCost = isNaN(shippingCost) ? 0 : Number(shippingCost);
     
     const orderData = {
       addressId: selectedAddress._id || selectedAddress.id,
       paymentMethod,
-    }
+      shippingCost: numericShippingCost,
+    };
     
     try {
-      await dispatch(createOrder(orderData)).unwrap()
-      toast.success('Order placed successfully!')
-      router.push('/orders')
+      await dispatch(createOrder(orderData)).unwrap();
+      toast.success('Order placed successfully!');
+      router.push('/orders');
     } catch (error) {
-      toast.error(`Failed to place order: ${error.message || 'Unknown error'}`)
+      toast.error(`Failed to place order: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
   }
 
@@ -240,12 +253,20 @@ const ModernOrderSummary = ({ totalPrice, items }) => {
         <div className="space-y-3 mb-6">
           <div className="flex justify-between">
             <span className="text-slate-600">Subtotal</span>
-            <span className="font-medium">{currency}{totalPrice.toFixed(2)}</span>
+            <span className="font-medium">{currency}{subtotal.toFixed(2)}</span>
           </div>
           
           <div className="flex justify-between">
             <span className="text-slate-600">Shipping</span>
-            <span className="font-medium text-green-600">Free</span>
+            {shippingLoading ? (
+              <span className="font-medium">Calculating...</span>
+            ) : shippingError ? (
+              <span className="font-medium text-green-600">Free</span>
+            ) : (
+              <span className="font-medium">
+                {shippingCost > 0 ? `${currency}${shippingCost.toFixed(2)}` : <span className="text-green-600">Free</span>}
+              </span>
+            )}
           </div>
           
           {appliedCoupon && (

@@ -80,14 +80,18 @@ export default function SuccessfulOrderDetails() {
 
     const formatCurrency = (amount) => {
         // Handle potential null or undefined values
-        if (!amount && amount !== 0) return 'N/A'
+        if (!amount && amount !== 0) return 'N/A';
+        
+        // Ensure amount is a number
+        const numericAmount = Number(amount);
+        if (isNaN(numericAmount)) return 'N/A';
         
         // Assuming amounts are in cents, convert to dollars
-        const dollars = amount / 100
+        const dollars = numericAmount / 100;
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-        }).format(dollars)
+        }).format(dollars);
     }
 
     const formatDate = (dateString) => {
@@ -375,7 +379,7 @@ export default function SuccessfulOrderDetails() {
                                     </div>
                                     <div className="flex justify-between">
                                         <p className="text-slate-600">Shipping</p>
-                                        <p className="font-medium">{formatCurrency(order.shippingCost)}</p>
+                                        <p className="font-medium">{formatCurrency(order.shippingCost || 0)}</p>
                                     </div>
                                     <div className="flex justify-between">
                                         <p className="text-slate-600">Tax</p>

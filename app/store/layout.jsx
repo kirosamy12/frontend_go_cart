@@ -5,7 +5,7 @@ export const metadata = {
     description: "ShopVerse. - Store Dashboard",
 };
 
-export default function RootAdminLayout({ children }) {
+export default function StoreRootLayout({ children }) {
 
     return (
         <>
