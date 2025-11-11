@@ -44,11 +44,17 @@ export default function StoreAddProduct() {
         setNewSize(e.target.value)
     }
 
-    const addSize = () => {
-        if (newSize.trim() && !productInfo.sizes.includes(newSize.trim())) {
+    const addSize = (e) => {
+        // Prevent form submission if called from form event
+        if (e && e.preventDefault) {
+            e.preventDefault()
+        }
+        
+        const trimmedSize = newSize.trim().toUpperCase()
+        if (trimmedSize && !productInfo.sizes.includes(trimmedSize)) {
             setProductInfo({
                 ...productInfo,
-                sizes: [...productInfo.sizes, newSize.trim()]
+                sizes: [...productInfo.sizes, trimmedSize]
             })
             setNewSize("")
         }
@@ -340,7 +346,12 @@ export default function StoreAddProduct() {
                             onChange={handleSizeChange}
                             placeholder="Enter size (e.g., S, M, L, XL)"
                             className="flex-1 p-3 outline-none border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    addSize()
+                                }
+                            }}
                         />
                         <button
                             type="button"
