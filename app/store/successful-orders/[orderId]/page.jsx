@@ -32,6 +32,7 @@ export default function SuccessfulOrderDetails() {
             const controller = new AbortController()
             const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
+            // Use the correct endpoint for successful order details
             const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/orders/successful/${orderId}`, {
                 method: 'GET',
                 headers: {

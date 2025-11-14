@@ -22,10 +22,16 @@ export default function SuccessfulOrders() {
                 throw new Error('No authentication token found. Please log in again.')
             }
 
+            console.log('Fetching successful orders with token:', token ? `${token.substring(0, 20)}...` : 'No token')
+            
             // Add a timeout to the fetch request
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+            const timeoutId = setTimeout(() => {
+                controller.abort()
+                console.error('Request timeout after 10 seconds')
+            }, 10000) // 10 second timeout
 
+            // Use the correct endpoint for successful orders based on memory
             const response = await fetch('https://go-cart-1bwm.vercel.app/api/store/orders/successful', {
                 method: 'GET',
                 headers: {
@@ -35,9 +41,27 @@ export default function SuccessfulOrders() {
             })
 
             clearTimeout(timeoutId)
+            console.log('API response status:', response.status)
+            
+            // Log response headers for debugging
+            console.log('Response headers:', [...response.headers.entries()])
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}))
+                console.error('API response not ok:', response.status, response.statusText)
+                let errorData = {}
+                try {
+                    errorData = await response.json()
+                    console.error('API error data:', errorData)
+                } catch (jsonError) {
+                    try {
+                        const errorText = await response.text()
+                        console.error('API error text:', errorText)
+                        errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` }
+                    } catch (textError) {
+                        errorData = { message: `HTTP ${response.status}: ${response.statusText}` }
+                    }
+                }
+                
                 if (response.status === 401) {
                     throw new Error('Authentication failed. Please log in again.')
                 }
@@ -45,7 +69,11 @@ export default function SuccessfulOrders() {
             }
 
             const data = await response.json()
-            if (!data.success) throw new Error(data.message || 'Failed to get successful orders')
+            console.log('API response data:', data)
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to get successful orders')
+            }
             
             setOrders(data.orders || [])
         } catch (error) {
