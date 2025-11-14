@@ -26,13 +26,13 @@ const AdminDashboard = () => {
     );
   }
 
-  // Prepare chart data
-  const monthlyRevenueData = salesData?.revenueByMonth?.map(item => ({
-    month: item.month,
-    revenue: item.revenue
+  // Prepare chart data from the new data structure
+  const monthlyRevenueData = data?.monthlyRevenue?.map(item => ({
+    month: `Month ${item._id}`,
+    revenue: item.total
   })) || [];
 
-  const storeRevenuesData = salesData?.revenueByStore?.map(item => ({
+  const storeRevenuesData = data?.storeRevenues?.map(item => ({
     name: item.storeName,
     revenue: item.revenue
   })) || [];
@@ -49,32 +49,32 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card
           title="Total Stores"
-          value={data?.metrics?.totalStores || 0}
+          value={data?.totalStores || 0}
           icon={StoreIcon}
           color="blue"
         />
         <Card
           title="Total Users"
-          value={data?.metrics?.totalUsers || 0}
+          value={data?.totalUsers || 0}
           icon={UsersIcon}
           color="green"
         />
         <Card
           title="Total Orders"
-          value={data?.metrics?.totalOrders || 0}
+          value={data?.totalOrders || 0}
           icon={ShoppingBagIcon}
           color="purple"
         />
         <Card
           title="Total Revenue"
-          value={`$${data?.metrics?.totalRevenue?.toLocaleString() || 0}`}
+          value={`$${data?.totalRevenue?.toLocaleString() || 0}`}
           icon={DollarSignIcon}
           color="orange"
         />
       </div>
 
       {/* Top Store */}
-      {data?.topStores?.[0] && (
+      {data?.topStore && (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
           <div className="flex items-center gap-3 mb-4">
             <TrendingUpIcon size={24} className="text-slate-600 dark:text-slate-400" />
@@ -82,11 +82,11 @@ const AdminDashboard = () => {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topStores[0].name}</h3>
-              <p className="text-slate-600 dark:text-slate-400">Highest revenue this month</p>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{data.topStore.storeName}</h3>
+              <p className="text-slate-600 dark:text-slate-400">Highest revenue</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-green-600">${data.topStores[0].revenue?.toLocaleString() || 0}</p>
+              <p className="text-2xl font-bold text-green-600">${data.topStore.revenue?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>

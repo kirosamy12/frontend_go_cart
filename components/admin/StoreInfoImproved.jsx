@@ -1,10 +1,13 @@
 'use client'
 import Image from "next/image"
-import { MapPin, Mail, Phone, Calendar, User } from "lucide-react"
+import { MapPin, Mail, Phone, Calendar, User, Store as StoreIcon, Package } from "lucide-react"
 
-const StoreInfoImproved = ({ store }) => {
+const StoreInfoImproved = ({ store, onClick }) => {
     return (
-        <div className="flex flex-col h-full">
+        <div 
+          className={`flex flex-col h-full ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+          onClick={onClick}
+        >
             {/* Store header */}
             <div className="flex items-start gap-4 mb-4">
                 <div className="flex-shrink-0">
@@ -63,6 +66,13 @@ const StoreInfoImproved = ({ store }) => {
                     <Mail size={16} className="mr-2 flex-shrink-0" />
                     <span className="truncate">{store.email || "No email provided"}</span>
                 </div>
+                {/* Orders count */}
+                {store.ordersCount !== undefined && (
+                    <div className="flex items-center text-sm text-gray-600">
+                        <Package size={16} className="mr-2 flex-shrink-0" />
+                        <span>{store.ordersCount} Orders</span>
+                    </div>
+                )}
             </div>
             
             {/* User info */}

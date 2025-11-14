@@ -6,7 +6,7 @@ import AdminNavbar from "@/components/admin/AdminNavbar"
 import AdminSidebar from "@/components/admin/AdminSidebar"
 import ModernLoading from "@/components/ModernLoading"
 
-const AdminLayout = ({ children }) => {
+const AdminLayoutOld = ({ children }) => {
     const router = useRouter()
     const pathname = usePathname()
     const { isAuthenticated, user, token } = useSelector(state => state.auth)
@@ -43,4 +43,4 @@ const AdminLayout = ({ children }) => {
     )
 }
 
-export default AdminLayout
+export default AdminLayoutOld

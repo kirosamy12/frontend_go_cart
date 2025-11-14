@@ -13,7 +13,6 @@ import {
   TrendingUpIcon,
   ShoppingCartIcon,
   UserCircleIcon,
-  SettingsIcon,
   LogOutIcon,
   MenuIcon,
   XIcon,
@@ -30,6 +29,7 @@ export default function DashboardLayout({ children, activePage = 'dashboard' }) 
   const navItems = [
     { name: 'Dashboard', icon: BarChart3Icon, href: '/admin', key: 'dashboard' },
     { name: 'Stores', icon: StoreIcon, href: '/admin/stores', key: 'stores' },
+    { name: 'Stores with Orders', icon: PackageIcon, href: '/admin/stores-with-orders', key: 'stores-with-orders' },
     { name: 'Users', icon: UsersIcon, href: '/admin/users', key: 'users' },
     { name: 'Orders', icon: PackageIcon, href: '/admin/orders', key: 'orders' },
     { name: 'Products', icon: ShoppingBasketIcon, href: '/admin/products', key: 'products' },

@@ -5,7 +5,15 @@ export default function OrdersAreaChartImproved({ allOrders }) {
 
     // Group orders by date
     const ordersPerDay = (allOrders || []).reduce((acc, order) => {
-        // Validate that order and createdAt exist
+        // Check if this is recentSales data (has _id as date and dailyRevenue/orderCount)
+        if (order && order._id && typeof order._id === 'string' && order._id.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // This is recentSales data
+            const date = order._id; // Already in YYYY-MM-DD format
+            acc[date] = (acc[date] || 0) + (order.orderCount || 1);
+            return acc;
+        }
+        
+        // Validate that order and createdAt exist for regular order data
         if (!order || !order.createdAt) {
             return acc;
         }
