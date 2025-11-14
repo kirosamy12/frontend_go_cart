@@ -19,7 +19,7 @@ import AddressModal from "@/components/AddressModal"
 import { useShippingCost } from "@/lib/hooks/useShippingCost"
 
 const ModernOrderSummary = ({ totalPrice, items }) => {
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
   const router = useRouter()
   const dispatch = useDispatch()
   

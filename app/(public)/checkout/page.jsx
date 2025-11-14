@@ -11,7 +11,7 @@ export default function Checkout() {
   const router = useRouter()
   const dispatch = useDispatch()
   
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
   
   const { cartItems } = useSelector(state => state.cart)
   const products = useSelector(state => state.product.list)

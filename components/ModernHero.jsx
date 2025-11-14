@@ -6,7 +6,7 @@ import Link from 'next/link'
 import React from 'react'
 
 const ModernHero = () => {
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
     return (
         <div className='mx-4 sm:mx-6'>

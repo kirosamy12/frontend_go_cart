@@ -86,12 +86,24 @@ export default function SuccessfulOrderDetails() {
         const numericAmount = Number(amount);
         if (isNaN(numericAmount)) return 'N/A';
         
-        // Assuming amounts are in cents, convert to dollars
-        const dollars = numericAmount / 100;
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(dollars);
+        // Check if the amount is a whole number
+        if (Number.isInteger(numericAmount)) {
+            // For whole numbers, display without decimals
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EGP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(numericAmount);
+        } else {
+            // For decimal numbers, display with 2 decimal places
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EGP',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(numericAmount);
+        }
     }
 
     const formatDate = (dateString) => {

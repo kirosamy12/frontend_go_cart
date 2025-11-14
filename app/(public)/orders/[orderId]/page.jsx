@@ -21,7 +21,7 @@ const OrderDetailsPage = () => {
     const dispatch = useDispatch()
     const { currentOrder, loading, error } = useSelector(state => state.orders)
     const { token } = useSelector(state => state.auth)
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
     useEffect(() => {
         if (token && orderId) {

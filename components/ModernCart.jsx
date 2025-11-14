@@ -17,7 +17,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 const ModernCart = () => {
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
   const router = useRouter()
   const dispatch = useDispatch()
 

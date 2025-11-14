@@ -11,7 +11,7 @@ import Counter from "./Counter";
 const ModernProductDetails = ({ product }) => {
 
     const productId = product?.id || product?._id;
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP';
 
     const cartItems = useSelector(state => state.cart.cartItems || {});
     const wishlistItems = useSelector(state => state.wishlist.wishlistItems || []);

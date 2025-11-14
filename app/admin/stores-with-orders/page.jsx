@@ -58,6 +58,33 @@ export default function StoresWithOrders() {
     return <ModernLoading />
   }
 
+  const formatCurrency = (amount) => {
+    // Handle potential null or undefined values
+    if (!amount && amount !== 0) return 'N/A'
+    
+    // Convert amount to number if it's not already
+    const numAmount = Number(amount) || 0;
+    
+    // Check if the amount is a whole number
+    if (Number.isInteger(numAmount)) {
+      // For whole numbers, display without decimals
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(numAmount);
+    } else {
+      // For decimal numbers, display with 2 decimal places
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numAmount);
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

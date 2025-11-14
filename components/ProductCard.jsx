@@ -12,7 +12,7 @@ const ProductCard = ({ product }) => {
     const dispatch = useDispatch()
     const { wishlistItems } = useSelector(state => state.wishlist)
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
     // calculate the average rating of the product
     const rating = product?.rating && product.rating.length > 0

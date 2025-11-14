@@ -64,6 +64,30 @@ export default function StoreOrders() {
     }
   }, [storeId])
 
+  const formatCurrency = (amount) => {
+    // Convert amount to number if it's not already
+    const numAmount = Number(amount) || 0;
+    
+    // Check if the amount is a whole number
+    if (Number.isInteger(numAmount)) {
+      // For whole numbers, display without decimals
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(numAmount);
+    } else {
+      // For decimal numbers, display with 2 decimal places
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numAmount);
+    }
+  }
+
   const getStatusClass = (status) => {
     switch (status) {
       case 'DELIVERED':

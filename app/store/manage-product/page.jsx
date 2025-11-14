@@ -13,7 +13,7 @@ export default function StoreManageProducts() {
     const dispatch = useDispatch()
     const { token, isAuthenticated } = useSelector(state => state.auth)
     const { list: products, loading, error } = useSelector(state => state.product)
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
     const [searchTerm, setSearchTerm] = useState('')
     const [stockFilter, setStockFilter] = useState('all') // 'all', 'inStock', 'outOfStock'

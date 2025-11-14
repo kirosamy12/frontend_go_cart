@@ -17,7 +17,7 @@ import {
   ChevronDownIcon
 } from "lucide-react"
 
-export default function AdminOrderDetails() {
+export default function StoreOrderDetails() {
   const router = useRouter()
   const params = useParams()
   const { orderId } = params
@@ -29,13 +29,11 @@ export default function AdminOrderDetails() {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const dropdownRef = useRef(null)
 
-  // Available status options
+  // Available status options for stores
   const statusOptions = [
-    "ORDER_PLACED",
-    "PROCESSING",
-    "SHIPPED",
-    "DELIVERED",
-    "CANCELLED"
+    "PENDING",
+    "READY",
+    "PICKED_UP"
   ]
 
   // Close dropdown when clicking outside
@@ -70,11 +68,18 @@ export default function AdminOrderDetails() {
       
       console.log(`Fetching details for order ${orderId}...`)
       
-      const response = await fetch(`https://go-cart-1bwm.vercel.app/api/admin/orders/${orderId}/details`, {
+      // Add a timeout to the fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
+      const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/orders/${orderId}`, {
         headers: {
-          'token': token
-        }
+          'token': token,
+        },
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('API response status:', response.status)
       
@@ -89,7 +94,15 @@ export default function AdminOrderDetails() {
       }
     } catch (error) {
       console.error('Error fetching order details:', error)
-      setError(error.message || 'Failed to fetch order details. Please try again later.')
+      
+      // Handle different types of errors
+      if (error.name === 'AbortError') {
+        setError('Request timeout. Please check your internet connection and try again.')
+      } else if (error.message.includes('Failed to fetch')) {
+        setError('Network error. Please check your internet connection and try again.')
+      } else {
+        setError(error.message || 'Failed to fetch order details. Please try again later.')
+      }
     } finally {
       setLoading(false)
     }
@@ -111,22 +124,23 @@ export default function AdminOrderDetails() {
         throw new Error('Order ID is required')
       }
       
-      // Get storeId from the order object
-      const storeId = order?.store?.id
-      if (!storeId) {
-        throw new Error('Store ID not found in order data')
-      }
-      
       console.log(`Updating order ${orderId} status to ${newStatus}...`)
       
-      const response = await fetch(`https://go-cart-1bwm.vercel.app/api/admin/stores/${storeId}/orders/${orderId}/status`, {
+      // Add a timeout to the fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
+      const response = await fetch(`https://go-cart-1bwm.vercel.app/api/store/order/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'token': token,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       console.log('Status update API response status:', response.status)
       
@@ -149,7 +163,15 @@ export default function AdminOrderDetails() {
       }
     } catch (error) {
       console.error('Error updating order status:', error)
-      alert(error.message || 'Failed to update order status. Please try again later.')
+      
+      // Handle different types of errors
+      if (error.name === 'AbortError') {
+        alert('Request timeout. Please check your internet connection and try again.')
+      } else if (error.message.includes('Failed to fetch')) {
+        alert('Network error. Please check your internet connection and try again.')
+      } else {
+        alert(error.message || 'Failed to update order status. Please try again later.')
+      }
     } finally {
       setUpdatingStatus(false)
     }
@@ -163,16 +185,12 @@ export default function AdminOrderDetails() {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'DELIVERED':
+      case 'PICKED_UP':
         return 'bg-green-100 text-green-800'
-      case 'ORDER_PLACED':
+      case 'READY':
         return 'bg-blue-100 text-blue-800'
-      case 'PROCESSING':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800'
-      case 'SHIPPED':
-        return 'bg-indigo-100 text-indigo-800'
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -310,9 +328,8 @@ export default function AdminOrderDetails() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Customer & Store Info */}
+            {/* Left Column - Customer Info */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Customer Info */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                   <UserIcon size={20} />
@@ -330,15 +347,6 @@ export default function AdminOrderDetails() {
                     <p className="font-medium">{order.customer?.email || 'N/A'}</p>
                   </div>
                   
-                  <div>
-                    <p className="text-sm text-slate-500">Member Since</p>
-                    <p className="font-medium">
-                      {order.customer?.memberSince 
-                        ? new Date(order.customer.memberSince).toLocaleDateString() 
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  
                   {order.customer?.phone && (
                     <div>
                       <p className="text-sm text-slate-500">Phone</p>
@@ -348,72 +356,42 @@ export default function AdminOrderDetails() {
                 </div>
               </div>
               
-              {/* Store Info */}
+              {/* Delivery Address */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <StoreIcon size={20} />
-                  Store Information
+                  <MapPinIcon size={20} />
+                  Delivery Address
                 </h2>
-                
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="flex-shrink-0">
-                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center">
-                      {order.store?.logo ? (
-                        <Image 
-                          width={64} 
-                          height={64} 
-                          src={order.store.logo} 
-                          alt={order.store.name} 
-                          className="rounded-xl object-cover w-full h-full"
-                        />
-                      ) : (
-                        <StoreIcon className="text-gray-400" size={24} />
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-slate-800">{order.store?.name || 'N/A'}</h3>
-                    <p className="text-sm text-slate-600">@{order.store?.username || 'N/A'}</p>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full mt-1 inline-block ${
-                      order.store?.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      order.store?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {order.store?.status || 'N/A'}
-                    </span>
-                  </div>
-                </div>
                 
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-slate-500">Email</p>
-                    <p className="font-medium">{order.store?.email || 'N/A'}</p>
+                    <p className="text-sm text-slate-500">Recipient</p>
+                    <p className="font-medium">{order.deliveryAddress?.name || 'N/A'}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-slate-500">Contact</p>
-                    <p className="font-medium">{order.store?.contact || 'N/A'}</p>
+                    <p className="text-sm text-slate-500">Email</p>
+                    <p className="font-medium">{order.deliveryAddress?.email || 'N/A'}</p>
                   </div>
                   
                   <div>
                     <p className="text-sm text-slate-500">Address</p>
-                    <p className="font-medium">{order.store?.address || 'N/A'}</p>
+                    <p className="font-medium">{order.deliveryAddress?.street || 'N/A'}</p>
+                    <p className="font-medium">
+                      {order.deliveryAddress?.city}, {order.deliveryAddress?.state}, {order.deliveryAddress?.zip}
+                    </p>
+                    <p className="font-medium">{order.deliveryAddress?.country || 'N/A'}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-slate-500">Member Since</p>
-                    <p className="font-medium">
-                      {order.store?.memberSince 
-                        ? new Date(order.store.memberSince).toLocaleDateString() 
-                        : 'N/A'}
-                    </p>
+                    <p className="text-sm text-slate-500">Phone</p>
+                    <p className="font-medium">{order.deliveryAddress?.phone || 'N/A'}</p>
                   </div>
                 </div>
               </div>
             </div>
             
-            {/* Right Column - Order Items & Delivery Info */}
+            {/* Right Column - Order Items */}
             <div className="lg:col-span-2 space-y-6">
               {/* Order Items */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -486,54 +464,23 @@ export default function AdminOrderDetails() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <p className="text-slate-600">Subtotal</p>
-                      <p className="font-medium">{formatCurrency(order.analytics?.subtotal)}</p>
+                      <p className="font-medium">{formatCurrency(order.subtotal)}</p>
                     </div>
                     
-                    {order.analytics?.discountAmount > 0 && (
-                      <div className="flex justify-between">
-                        <p className="text-slate-600">Discount</p>
-                        <p className="font-medium text-red-600">-{formatCurrency(order.analytics.discountAmount)}</p>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <p className="text-slate-600">Shipping</p>
+                      <p className="font-medium">{formatCurrency(order.shippingCost || 0)}</p>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <p className="text-slate-600">Tax</p>
+                      <p className="font-medium">{formatCurrency(order.tax || 0)}</p>
+                    </div>
                     
                     <div className="flex justify-between pt-2 border-t border-slate-200">
                       <p className="font-semibold text-slate-800">Total</p>
-                      <p className="font-bold text-lg">{formatCurrency(order.analytics?.finalTotal)}</p>
+                      <p className="font-bold text-lg">{formatCurrency(order.total)}</p>
                     </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Delivery Address */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <MapPinIcon size={20} />
-                  Delivery Address
-                </h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-slate-500">Recipient</p>
-                    <p className="font-medium">{order.deliveryAddress?.name || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-slate-500">Email</p>
-                    <p className="font-medium">{order.deliveryAddress?.email || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-slate-500">Address</p>
-                    <p className="font-medium">{order.deliveryAddress?.street || 'N/A'}</p>
-                    <p className="font-medium">
-                      {order.deliveryAddress?.city}, {order.deliveryAddress?.state}, {order.deliveryAddress?.zip}
-                    </p>
-                    <p className="font-medium">{order.deliveryAddress?.country || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-slate-500">Phone</p>
-                    <p className="font-medium">{order.deliveryAddress?.phone || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -547,10 +494,10 @@ export default function AdminOrderDetails() {
             <h3 className="text-lg font-medium text-gray-900 mb-1">Order not found</h3>
             <p className="text-gray-500">The requested order could not be found.</p>
             <button 
-              onClick={() => router.push('/admin')}
+              onClick={() => router.push('/store/orders')}
               className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
             >
-              Back to Dashboard
+              Back to Orders
             </button>
           </div>
         </div>

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 const OrderItem = ({ order }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
     const [ratingModal, setRatingModal] = useState(null);
     const router = useRouter();
 

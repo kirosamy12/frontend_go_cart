@@ -12,7 +12,7 @@ const WishlistItem = ({ product }) => {
         dispatch(removeFromWishlist({ productId: product.id }))
     }
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
     return (
         <div className="border border-slate-200 rounded p-4 flex flex-col">

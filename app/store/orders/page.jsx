@@ -55,12 +55,27 @@ export default function StoreOrders() {
         // Handle potential null or undefined values
         if (!amount && amount !== 0) return 'N/A'
         
-        // Assuming amounts are in cents, convert to dollars
-        const dollars = amount / 100
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(dollars)
+        // Convert amount to number if it's not already
+        const numAmount = Number(amount) || 0;
+        
+        // Check if the amount is a whole number
+        if (Number.isInteger(numAmount)) {
+            // For whole numbers, display without decimals
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EGP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(numAmount);
+        } else {
+            // For decimal numbers, display with 2 decimal places
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EGP',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(numAmount);
+        }
     }
 
     const formatDate = (dateString) => {
@@ -197,6 +212,7 @@ export default function StoreOrders() {
                                         </td>
                                     </tr>
                                 ))}
+
                             </tbody>
                         </table>
                     </div>

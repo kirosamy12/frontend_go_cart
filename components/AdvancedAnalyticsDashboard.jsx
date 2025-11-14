@@ -102,6 +102,33 @@ const AdvancedAnalyticsDashboard = () => {
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+  const formatCurrency = (amount) => {
+    // Handle potential null or undefined values
+    if (!amount && amount !== 0) return 'N/A'
+    
+    // Convert amount to number if it's not already
+    const numAmount = Number(amount) || 0;
+    
+    // Check if the amount is a whole number
+    if (Number.isInteger(numAmount)) {
+      // For whole numbers, display without decimals
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(numAmount);
+    } else {
+      // For decimal numbers, display with 2 decimal places
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numAmount);
+    }
+  }
+
   // Loading state
   if ((isStoreOwner && (storeAdvancedLoading || storeRevenueLoading || storeProductSalesLoading || storeOrderVolumeLoading || storeCustomerAcquisitionLoading)) || 
       (isAdmin && (adminRevenueLoading || adminOrderVolumeLoading || adminCustomerTrendLoading || adminRecentActivityLoading || adminTopStoresLoading))) {
@@ -174,7 +201,7 @@ const AdvancedAnalyticsDashboard = () => {
                   <div>
                     <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
                     <p className="text-2xl font-bold text-slate-800">
-                      ${currentData.metrics?.totalRevenue?.toLocaleString() || 0}
+                      EGP{currentData.metrics?.totalRevenue?.toLocaleString() || 0}
                     </p>
                   </div>
                   <div className="bg-green-100 p-3 rounded-lg">
@@ -232,7 +259,7 @@ const AdvancedAnalyticsDashboard = () => {
                   <div>
                     <p className="text-sm font-medium text-slate-500 mb-1">Total Revenue</p>
                     <p className="text-2xl font-bold text-slate-800">
-                      ${currentData.metrics?.totalRevenue?.toLocaleString() || 0}
+                      EGP{currentData.metrics?.totalRevenue?.toLocaleString() || 0}
                     </p>
                   </div>
                   <div className="bg-green-100 p-3 rounded-lg">
