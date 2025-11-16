@@ -24,13 +24,16 @@ export default function StoreAddProduct() {
         category: "",
         inStock: true,
         colors: [],
-        sizes: [], // Add sizes array
+        sizes: [],
     })
 
+    // New state for inventory management
     const [newSize, setNewSize] = useState("")
+    const [sizeQuantities, setSizeQuantities] = useState({})
+    const [colorSizeQuantities, setColorSizeQuantities] = useState({})
     const [loading, setLoading] = useState(false)
-    const [imagePreviews, setImagePreviews] = useState([]) // For better performance
-    const [uploadProgress, setUploadProgress] = useState(0) // Track upload progress
+    const [imagePreviews, setImagePreviews] = useState([])
+    const [uploadProgress, setUploadProgress] = useState(0)
 
     const onChangeHandler = (e) => {
         const { name, value, type, checked } = e.target
@@ -45,7 +48,6 @@ export default function StoreAddProduct() {
     }
 
     const addSize = (e) => {
-        // Prevent form submission if called from form event
         if (e && e.preventDefault) {
             e.preventDefault()
         }
@@ -56,6 +58,8 @@ export default function StoreAddProduct() {
                 ...productInfo,
                 sizes: [...productInfo.sizes, trimmedSize]
             })
+            // Initialize quantity for this size
+            setSizeQuantities(prev => ({ ...prev, [trimmedSize]: 0 }))
             setNewSize("")
         }
     }
@@ -65,12 +69,41 @@ export default function StoreAddProduct() {
             ...productInfo,
             sizes: productInfo.sizes.filter(size => size !== sizeToRemove)
         })
+        // Remove quantity for this size
+        const newQuantities = { ...sizeQuantities }
+        delete newQuantities[sizeToRemove]
+        setSizeQuantities(newQuantities)
+        
+        // Remove this size from all color size quantities
+        const newColorSizeQuantities = { ...colorSizeQuantities }
+        Object.keys(newColorSizeQuantities).forEach(color => {
+            const newSizeQuantities = { ...newColorSizeQuantities[color] }
+            delete newSizeQuantities[sizeToRemove]
+            newColorSizeQuantities[color] = newSizeQuantities
+        })
+        setColorSizeQuantities(newColorSizeQuantities)
+    }
+
+    const handleSizeQuantityChange = (size, value) => {
+        setSizeQuantities(prev => ({
+            ...prev,
+            [size]: parseInt(value) || 0
+        }))
+    }
+
+    const handleColorSizeQuantityChange = (color, size, value) => {
+        setColorSizeQuantities(prev => ({
+            ...prev,
+            [color]: {
+                ...prev[color],
+                [size]: parseInt(value) || 0
+            }
+        }))
     }
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
         
-        // Validate file types
         const validFiles = files.filter(file => 
             file.type.startsWith('image/') && 
             (file.type === 'image/jpeg' || file.type === 'image/jpg' || file.type === 'image/png' || file.type === 'image/webp')
@@ -81,23 +114,19 @@ export default function StoreAddProduct() {
             return
         }
         
-        // Validate file sizes (max 5MB each)
         const largeFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024)
         if (largeFiles.length > 0) {
             toast.error("Image size should be less than 5MB")
             return
         }
         
-        // Create previews for better UX
         const previews = validFiles.map(file => URL.createObjectURL(file))
         
-        // Update both images and previews
         setImages(prevImages => [...prevImages, ...validFiles])
         setImagePreviews(prevPreviews => [...prevPreviews, ...previews])
     }
 
     const removeImage = (index) => {
-        // Clean up object URL to prevent memory leaks
         URL.revokeObjectURL(imagePreviews[index])
         
         const newImages = [...images]
@@ -128,7 +157,6 @@ export default function StoreAddProduct() {
                 return
             }
 
-            // Validate form data
             if (!productInfo.name.trim()) {
                 toast.error("Product name is required")
                 setLoading(false)
@@ -168,23 +196,22 @@ export default function StoreAddProduct() {
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock)
             
-            // Only append colors and sizes if they have values
+            // Append colors and sizes if they have values
             if (productInfo.colors.length > 0) {
                 formData.append('colors', JSON.stringify(productInfo.colors))
             }
             if (productInfo.sizes.length > 0) {
                 formData.append('sizes', JSON.stringify(productInfo.sizes))
+                // Append size quantities
+                formData.append('sizeQuantities', JSON.stringify(sizeQuantities))
+                // Append color size quantities
+                formData.append('colorSizeQuantities', JSON.stringify(colorSizeQuantities))
             }
 
-            // Append images as an array
+            // Append images
             images.forEach((image, index) => {
                 formData.append('images', image)
             })
-
-            // Log FormData for debugging (uncomment if needed)
-            // for (let [key, value] of formData.entries()) {
-            //     console.log(key, value);
-            // }
 
             // Dispatch action
             const result = await dispatch(addProduct({ productData: formData, token }))
@@ -203,11 +230,12 @@ export default function StoreAddProduct() {
                     colors: [],
                     sizes: [],
                 })
+                setSizeQuantities({})
+                setColorSizeQuantities({})
                 setImages([])
                 setImagePreviews([])
                 setNewSize("")
             } else {
-                // Handle rejected promise
                 const errorMessage = result.payload || "Failed to add product. Please try again."
                 toast.error(errorMessage)
                 console.error("Product creation failed:", errorMessage)
@@ -251,7 +279,7 @@ export default function StoreAddProduct() {
                             height={100}
                             alt={`Product Image ${index + 1}`}
                             className="rounded-md object-cover border border-gray-300"
-                            unoptimized={true} // For better performance with local URLs
+                            unoptimized={true}
                         />
                         <button
                             type="button"
@@ -332,11 +360,30 @@ export default function StoreAddProduct() {
 
             <ColorPicker
                 colors={productInfo.colors}
-                onChange={(colors) => setProductInfo({ ...productInfo, colors })}
+                onChange={(colors) => {
+                    setProductInfo({ ...productInfo, colors })
+                    // Initialize color size quantities for new colors
+                    const newColorSizeQuantities = { ...colorSizeQuantities }
+                    colors.forEach(color => {
+                        if (!newColorSizeQuantities[color]) {
+                            newColorSizeQuantities[color] = {}
+                            productInfo.sizes.forEach(size => {
+                                newColorSizeQuantities[color][size] = 0
+                            })
+                        }
+                    })
+                    // Remove color size quantities for removed colors
+                    Object.keys(newColorSizeQuantities).forEach(color => {
+                        if (!colors.includes(color)) {
+                            delete newColorSizeQuantities[color]
+                        }
+                    })
+                    setColorSizeQuantities(newColorSizeQuantities)
+                }}
             />
 
             {/* Size Selection */}
-            <div className="my-6">
+            <div className="my-6 w-full">
                 <label className="flex flex-col gap-2">
                     Sizes
                     <div className="flex gap-2">
@@ -363,7 +410,28 @@ export default function StoreAddProduct() {
                     </div>
                 </label>
 
-                {/* Display added sizes */}
+                {/* Display added sizes with quantities */}
+                {productInfo.sizes.length > 0 && (
+                    <div className="mt-4">
+                        <h3 className="font-medium text-gray-700 mb-2">Size Quantities</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {productInfo.sizes.map((size, index) => (
+                                <div key={index} className="flex flex-col">
+                                    <label className="text-sm text-gray-600 mb-1">{size}</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={sizeQuantities[size] || 0}
+                                        onChange={(e) => handleSizeQuantityChange(size, e.target.value)}
+                                        className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Display added sizes as tags */}
                 {productInfo.sizes.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                         {productInfo.sizes.map((size, index) => (
@@ -381,6 +449,51 @@ export default function StoreAddProduct() {
                     </div>
                 )}
             </div>
+
+            {/* Color-Size Quantity Matrix */}
+            {productInfo.colors.length > 0 && productInfo.sizes.length > 0 && (
+                <div className="my-6 w-full">
+                    <h3 className="font-medium text-gray-700 mb-3">Inventory by Color & Size</h3>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full border border-gray-200">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    <th className="border-b border-r border-gray-200 p-2 text-left">Color</th>
+                                    {productInfo.sizes.map((size, index) => (
+                                        <th key={index} className="border-b border-r border-gray-200 p-2 text-center">{size}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {productInfo.colors.map((color, colorIndex) => (
+                                    <tr key={colorIndex}>
+                                        <td className="border-b border-r border-gray-200 p-2">
+                                            <div className="flex items-center">
+                                                <div 
+                                                    className="w-4 h-4 rounded-full border border-gray-300 mr-2" 
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <span>{color}</span>
+                                            </div>
+                                        </td>
+                                        {productInfo.sizes.map((size, sizeIndex) => (
+                                            <td key={sizeIndex} className="border-b border-r border-gray-200 p-2">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={colorSizeQuantities[color]?.[size] || 0}
+                                                    onChange={(e) => handleColorSizeQuantityChange(color, size, e.target.value)}
+                                                    className="w-full p-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             <br />
 

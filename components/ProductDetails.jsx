@@ -62,6 +62,32 @@ const ProductDetails = ({ product }) => {
     const discountPercentage = product?.mrp && product?.price ? 
         Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
 
+    // Get available quantity for selected color and size
+    const getAvailableQuantity = () => {
+        if (!selectedColor && !selectedSize) {
+            // If no color/size selected, show total quantity for the size
+            if (product?.sizeQuantities && selectedSize) {
+                return product.sizeQuantities[selectedSize] || 0;
+            }
+            return null;
+        }
+        
+        if (selectedColor && selectedSize) {
+            // Show quantity for specific color/size combination
+            if (product?.colorSizeQuantities?.[selectedColor]?.[selectedSize] !== undefined) {
+                return product.colorSizeQuantities[selectedColor][selectedSize];
+            }
+        } else if (selectedSize) {
+            // Show quantity for size only
+            if (product?.sizeQuantities?.[selectedSize] !== undefined) {
+                return product.sizeQuantities[selectedSize];
+            }
+        }
+        return null;
+    };
+
+    const availableQuantity = getAvailableQuantity();
+
     return (
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             <div className="flex flex-col lg:w-1/2">
@@ -178,23 +204,43 @@ const ProductDetails = ({ product }) => {
                         <div>
                             <p className="text-sm font-medium text-slate-700 mb-3">Select Size</p>
                             <div className="flex gap-3 flex-wrap">
-                                {product.sizes.map((size, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setSelectedSize(size)}
-                                        className={`px-4 py-2 border rounded-lg font-medium transition-all ${
-                                            selectedSize === size
-                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                                : 'border-slate-300 hover:border-slate-500 text-slate-700'
-                                        }`}
-                                    >
-                                        {size}
-                                    </button>
-                                ))}
+                                {product.sizes.map((size, index) => {
+                                    // Check if this size is available for the selected color
+                                    let isAvailable = true;
+                                    if (selectedColor && product?.colorSizeQuantities?.[selectedColor]) {
+                                        isAvailable = (product.colorSizeQuantities[selectedColor][size] || 0) > 0;
+                                    } else if (product?.sizeQuantities) {
+                                        isAvailable = (product.sizeQuantities[size] || 0) > 0;
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            key={index}
+                                            onClick={() => setSelectedSize(size)}
+                                            disabled={!isAvailable}
+                                            className={`px-4 py-2 border rounded-lg font-medium transition-all ${
+                                                selectedSize === size
+                                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                                    : isAvailable
+                                                        ? 'border-slate-300 hover:border-slate-500 text-slate-700'
+                                                        : 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            {size}
+                                        </button>
+                                    );
+                                })}
                             </div>
                             {selectedSize && (
                                 <p className="text-sm text-slate-500 mt-2">
                                     Selected: <span className="font-medium">{selectedSize}</span>
+                                </p>
+                            )}
+                            
+                            {/* Display available quantity */}
+                            {availableQuantity !== null && (
+                                <p className="text-sm text-slate-500 mt-2">
+                                    Available: <span className="font-medium">{availableQuantity} items</span>
                                 </p>
                             )}
                         </div>
