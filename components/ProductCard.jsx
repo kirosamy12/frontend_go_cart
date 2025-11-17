@@ -64,7 +64,51 @@ const ProductCard = ({ product }) => {
         return [];
     };
 
+    // Handle different possible structures for scents data
+    const getScents = () => {
+        if (!product) return [];
+        
+        // Check multiple possible locations for scents data
+        if (Array.isArray(product.scents)) {
+            return product.scents;
+        }
+        
+        if (Array.isArray(product.scent)) {
+            return product.scent;
+        }
+        
+        if (typeof product.scents === 'string') {
+            try {
+                // Handle the case where scents might be stored as a stringified array like "['Rose', 'Lavender', 'Vanilla']"
+                const cleaned = product.scents.replace(/'/g, '"').replace(/\[|\]/g, '');
+                const parsed = JSON.parse(`[${cleaned}]`);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                // If that fails, try to parse as a regular JSON array
+                try {
+                    const parsed = JSON.parse(product.scents);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e2) {
+                    // If all else fails, split by comma
+                    return product.scents.split(',').map(s => s.trim()).filter(s => s);
+                }
+            }
+        }
+        
+        if (typeof product.scent === 'string') {
+            try {
+                const parsed = JSON.parse(product.scent);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return product.scent.split(',').map(s => s.trim()).filter(s => s);
+            }
+        }
+        
+        return [];
+    };
+
     const sizes = getSizes();
+    const scents = getScents();
 
     return (
         <Link href={`/product/${product?.id || product?._id}`} className='group relative'>
@@ -138,7 +182,7 @@ const ProductCard = ({ product }) => {
                             </span>
                         </div>
                         
-                        {/* Colors and Sizes - Displayed side by side in a cleaner format */}
+                        {/* Colors, Sizes, and Scents - Displayed side by side in a cleaner format */}
                         <div className="flex flex-wrap gap-2 mb-2">
                             {/* Colors displayed as small circles */}
                             {product?.colors && product.colors.length > 0 && (
@@ -167,6 +211,20 @@ const ProductCard = ({ product }) => {
                                     ))}
                                     {sizes.length > 3 && (
                                         <span className="text-xs text-slate-500">+{sizes.length - 3}</span>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {/* Scents displayed as small badges */}
+                            {scents && scents.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                    {scents.slice(0, 2).map((scent, index) => (
+                                        <div key={index} className="text-xs px-1.5 py-0.5 bg-purple-100 rounded text-purple-700">
+                                            {scent}
+                                        </div>
+                                    ))}
+                                    {scents.length > 2 && (
+                                        <span className="text-xs text-slate-500">+{scents.length - 2}</span>
                                     )}
                                 </div>
                             )}

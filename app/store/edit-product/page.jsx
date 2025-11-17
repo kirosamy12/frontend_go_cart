@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast"
 import { updateProduct, fetchProduct } from "@/lib/features/product/productSlice"
 import { fetchCategories } from "@/lib/features/category/categorySlice"
 import { useParams, useRouter } from "next/navigation"
+import ScentsPicker from "@/components/ScentsPicker"
 
 export default function StoreEditProduct() {
     const { productId } = useParams()
@@ -30,6 +31,7 @@ export default function StoreEditProduct() {
     const [loading, setLoading] = useState(false)
     const [sizes, setSizes] = useState([]) // Add state for sizes
     const [newSize, setNewSize] = useState("") // Add state for new size input
+    const [scents, setScents] = useState([]) // Add state for scents
 
     useEffect(() => {
         if (productId) {
@@ -50,6 +52,7 @@ export default function StoreEditProduct() {
             })
             setExistingImages(product.images || [])
             setSizes(product.sizes || []) // Initialize sizes from product data
+            setScents(product.scents || []) // Initialize scents from product data
         }
     }, [product])
 
@@ -179,6 +182,11 @@ export default function StoreEditProduct() {
                 formData.append('sizes', size)
             })
 
+            // Add scents as array
+            scents.forEach(scent => {
+                formData.append('scents', scent)
+            })
+
             // Add existing images that haven't been replaced
             existingImages.forEach((image, index) => {
                 if (!replacedImages[index]) {
@@ -220,6 +228,11 @@ export default function StoreEditProduct() {
             setLoading(false)
         }
     }
+
+    // Find the selected category object
+    const selectedCategory = categories.find(cat => cat.id === productInfo.category);
+    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') || 
+                            selectedCategory?.name?.toLowerCase().includes('candles');
 
     if (productLoading) {
         return <div className="text-center py-8">Loading product...</div>
@@ -334,6 +347,16 @@ export default function StoreEditProduct() {
                 />
                 <span>In Stock</span>
             </label>
+
+            {/* Scents Picker - Only show for candle categories */}
+            {isCandleCategory && (
+                <div className="my-6">
+                    <ScentsPicker
+                        scents={scents}
+                        onChange={setScents}
+                    />
+                </div>
+            )}
 
             {/* Size Selection */}
             <div className="my-6">

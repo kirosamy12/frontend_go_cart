@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast"
 import { addProduct } from "@/lib/features/product/productSlice"
 import { fetchCategories } from "@/lib/features/category/categorySlice"
 import ColorPicker from "@/components/ColorPicker"
+import ScentsPicker from "@/components/ScentsPicker"
 import ModernLoading from "@/components/ModernLoading"
 
 export default function StoreAddProduct() {
@@ -25,6 +26,7 @@ export default function StoreAddProduct() {
         inStock: true,
         colors: [],
         sizes: [],
+        scents: [], // Add scents array
     })
 
     // New state for inventory management
@@ -196,7 +198,7 @@ export default function StoreAddProduct() {
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock)
             
-            // Append colors and sizes if they have values
+            // Append colors, sizes, and scents if they have values
             if (productInfo.colors.length > 0) {
                 formData.append('colors', JSON.stringify(productInfo.colors))
             }
@@ -206,6 +208,9 @@ export default function StoreAddProduct() {
                 formData.append('sizeQuantities', JSON.stringify(sizeQuantities))
                 // Append color size quantities
                 formData.append('colorSizeQuantities', JSON.stringify(colorSizeQuantities))
+            }
+            if (productInfo.scents.length > 0) {
+                formData.append('scents', JSON.stringify(productInfo.scents))
             }
 
             // Append images
@@ -229,6 +234,7 @@ export default function StoreAddProduct() {
                     inStock: true,
                     colors: [],
                     sizes: [],
+                    scents: [], // Reset scents
                 })
                 setSizeQuantities({})
                 setColorSizeQuantities({})
@@ -260,6 +266,11 @@ export default function StoreAddProduct() {
     useEffect(() => {
         dispatch(fetchCategories())
     }, [dispatch])
+
+    // Find the selected category object
+    const selectedCategory = categories.find(cat => cat.id === productInfo.category);
+    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') || 
+                            selectedCategory?.name?.toLowerCase().includes('candles');
 
     if (categoriesLoading) {
         return <ModernLoading />
@@ -381,6 +392,16 @@ export default function StoreAddProduct() {
                     setColorSizeQuantities(newColorSizeQuantities)
                 }}
             />
+
+            {/* Scents Picker - Only show for candle categories */}
+            {isCandleCategory && (
+                <div className="my-6 w-full">
+                    <ScentsPicker
+                        scents={productInfo.scents}
+                        onChange={(scents) => setProductInfo({ ...productInfo, scents })}
+                    />
+                </div>
+            )}
 
             {/* Size Selection */}
             <div className="my-6 w-full">
