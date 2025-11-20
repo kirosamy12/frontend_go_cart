@@ -1,8 +1,8 @@
 'use client'
-import { StarIcon, HeartIcon } from 'lucide-react'
+import { StarIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice'
 import { getColorName } from '@/lib/utils/colorUtils'
@@ -14,15 +14,23 @@ const ProductCard = ({ product }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'EGP'
 
-    // calculate the average rating of the product
-    const rating = product?.rating && product.rating.length > 0
-        ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
-        : 0;
+    // ✅ استخدام useMemo للحسابات
+    const rating = useMemo(() => {
+        if (!product?.rating || product.rating.length === 0) return 0;
+        const sum = product.rating.reduce((acc, curr) => acc + curr.rating, 0);
+        return (sum / product.rating.length).toFixed(1);
+    }, [product?.rating]);
+
+    const discountPercentage = useMemo(() => {
+        if (!product?.mrp || !product?.price || product.mrp <= product.price) return 0;
+        return Math.round(((product.mrp - product.price) / product.mrp) * 100);
+    }, [product?.mrp, product?.price]);
 
     const isInWishlist = wishlistItems.includes(product?.id || product?._id)
 
     const handleWishlistToggle = (e) => {
         e.preventDefault()
+        e.stopPropagation()
         if (isInWishlist) {
             dispatch(removeFromWishlist({ productId: product?.id || product?._id }))
         } else {
@@ -30,119 +38,104 @@ const ProductCard = ({ product }) => {
         }
     }
 
-    // Handle different possible structures for sizes data
-    const getSizes = () => {
+    // ✅ تحسين دالة getSizes
+    const sizes = useMemo(() => {
         if (!product) return [];
         
-        // Check multiple possible locations for sizes data
-        if (Array.isArray(product.sizes)) {
-            return product.sizes;
+        const sizeData = product.sizes || product.size;
+        
+        if (Array.isArray(sizeData)) {
+            return sizeData;
         }
         
-        if (Array.isArray(product.size)) {
-            return product.size;
-        }
-        
-        if (typeof product.sizes === 'string') {
+        if (typeof sizeData === 'string') {
             try {
-                const parsed = JSON.parse(product.sizes);
+                const parsed = JSON.parse(sizeData);
                 return Array.isArray(parsed) ? parsed : [];
             } catch (e) {
-                return [];
-            }
-        }
-        
-        if (typeof product.size === 'string') {
-            try {
-                const parsed = JSON.parse(product.size);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                return [];
+                return sizeData.split(',').map(s => s.trim()).filter(Boolean);
             }
         }
         
         return [];
-    };
+    }, [product]);
 
-    // Handle different possible structures for scents data
-    const getScents = () => {
+    // ✅ تحسين دالة getScents
+    const scents = useMemo(() => {
         if (!product) return [];
         
-        // Check multiple possible locations for scents data
-        if (Array.isArray(product.scents)) {
-            return product.scents;
+        const scentData = product.scents || product.scent;
+        
+        if (Array.isArray(scentData)) {
+            return scentData;
         }
         
-        if (Array.isArray(product.scent)) {
-            return product.scent;
-        }
-        
-        if (typeof product.scents === 'string') {
+        if (typeof scentData === 'string') {
             try {
-                // Handle the case where scents might be stored as a stringified array like "['Rose', 'Lavender', 'Vanilla']"
-                const cleaned = product.scents.replace(/'/g, '"').replace(/\[|\]/g, '');
-                const parsed = JSON.parse(`[${cleaned}]`);
+                const parsed = JSON.parse(scentData);
                 return Array.isArray(parsed) ? parsed : [];
             } catch (e) {
-                // If that fails, try to parse as a regular JSON array
-                try {
-                    const parsed = JSON.parse(product.scents);
-                    return Array.isArray(parsed) ? parsed : [];
-                } catch (e2) {
-                    // If all else fails, split by comma
-                    return product.scents.split(',').map(s => s.trim()).filter(s => s);
-                }
-            }
-        }
-        
-        if (typeof product.scent === 'string') {
-            try {
-                const parsed = JSON.parse(product.scent);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                return product.scent.split(',').map(s => s.trim()).filter(s => s);
+                return scentData.split(',').map(s => s.trim()).filter(Boolean);
             }
         }
         
         return [];
+    }, [product]);
+
+    // ✅ Get stock quantity for display
+    const getTotalQuantity = () => {
+        if (product?.sizeQuantities) {
+            return Object.values(product.sizeQuantities).reduce((sum, qty) => sum + qty, 0);
+        }
+        return null;
     };
 
-    const sizes = getSizes();
-    const scents = getScents();
+    const totalQuantity = getTotalQuantity();
 
     return (
-        <Link href={`/product/${product?.id || product?._id}`} className='group relative'>
-            <div className='bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col'>
+        <Link 
+            href={`/product/${product?.id || product?._id}`} 
+            className='group relative block'
+            suppressHydrationWarning
+        >
+            <div className='bg-gradient-to-br from-white to-slate-50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col border border-slate-100'>
                 {/* Product image container */}
-                <div className='relative h-48 flex items-center justify-center p-4'>
+                <div className='relative h-48 flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100'>
                     <Image 
                         width={500} 
                         height={500} 
-                        className='max-h-40 w-auto object-contain group-hover:scale-105 transition-transform duration-300' 
+                        className='max-h-40 w-auto object-contain group-hover:scale-110 transition-transform duration-500' 
                         src={product?.images && product.images[0] ? product.images[0] : '/assets/product_img1.png'} 
                         alt={product?.name || 'Product'} 
+                        loading="lazy"
                     />
                     
                     {/* Wishlist button */}
                     <button 
                         onClick={handleWishlistToggle} 
-                        className={`absolute top-3 right-3 p-2 rounded-full transition-all shadow-sm ${
+                        className={`absolute top-3 right-3 p-2.5 rounded-full transition-all shadow-md hover:scale-110 z-10 ${
                             isInWishlist 
-                                ? 'text-red-500 bg-white' 
-                                : 'text-gray-400 bg-white hover:text-red-500'
+                                ? 'text-red-500 bg-white ring-2 ring-red-200' 
+                                : 'text-slate-400 bg-white hover:text-red-500 hover:bg-red-50'
                         }`}
+                        aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
-                        <HeartIcon size={18} fill={isInWishlist ? 'currentColor' : 'none'} />
+                        <HeartIcon size={18} fill={isInWishlist ? 'currentColor' : 'none'} strokeWidth={2} />
                     </button>
                     
                     {/* Image indicators */}
                     {product?.images && product.images.length > 1 && (
-                        <div className="absolute bottom-3 left-3 flex gap-1">
+                        <div className="absolute bottom-3 left-3 flex gap-1.5">
                             {product.images.slice(0, 3).map((_, index) => (
-                                <div key={index} className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+                                <div 
+                                    key={index} 
+                                    className={`w-2 h-2 rounded-full transition-all ${
+                                        index === 0 ? 'bg-indigo-500' : 'bg-slate-300'
+                                    }`}
+                                />
                             ))}
                             {product.images.length > 3 && (
-                                <span className="text-xs text-white bg-black bg-opacity-50 px-1.5 py-0.5 rounded-full">
+                                <span className="text-xs text-slate-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full font-medium">
                                     +{product.images.length - 3}
                                 </span>
                             )}
@@ -150,81 +143,95 @@ const ProductCard = ({ product }) => {
                     )}
                     
                     {/* Sale badge */}
-                    {product?.mrp && product?.price && product.mrp > product.price && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+                    {discountPercentage > 0 && (
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                            {discountPercentage}% OFF
                         </div>
                     )}
                     
+                    {/* Quick add to cart (appears on hover) */}
+                    <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Add to cart logic here
+                            }}
+                            className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                            aria-label="Quick add to cart"
+                        >
+                            <ShoppingCartIcon size={16} />
+                        </button>
+                    </div>
                 </div>
                 
                 {/* Product info */}
                 <div className='p-4 flex-1 flex flex-col'>
                     <div className='flex-1'>
-                        <h3 className="font-semibold text-slate-800 truncate mb-1 group-hover:text-indigo-600 transition-colors">
+                        <h3 className="font-semibold text-slate-800 truncate mb-1 group-hover:text-indigo-600 transition-colors text-base">
                             {product?.name || 'Product Name'}
                         </h3>
                         
                         {/* Rating */}
-                        <div className='flex items-center gap-1 mb-2'>
+                        <div className='flex items-center gap-2 mb-3'>
                             <div className='flex'>
                                 {Array(5).fill('').map((_, index) => (
                                     <StarIcon 
                                         key={index} 
                                         size={14} 
                                         className='text-transparent' 
-                                        fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} 
+                                        fill={parseFloat(rating) >= index + 1 ? "#fbbf24" : "#D1D5DB"} 
                                     />
                                 ))}
                             </div>
-                            <span className='text-xs text-slate-500 ml-1'>
-                                {product?.rating?.length || 0} reviews
+                            <span className='text-xs text-slate-600 font-medium'>
+                                {rating} ({product?.rating?.length || 0})
                             </span>
                         </div>
                         
-                        {/* Colors, Sizes, and Scents - Displayed side by side in a cleaner format */}
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            {/* Colors displayed as small circles */}
+                        {/* Options: Colors, Sizes, and Scents */}
+                        <div className="flex flex-wrap gap-1.5 mb-3 min-h-[24px]">
+                            {/* Colors */}
                             {product?.colors && product.colors.length > 0 && (
                                 <div className="flex items-center gap-1">
                                     {product.colors.slice(0, 3).map((color, index) => (
                                         <div 
                                             key={index} 
-                                            className="w-4 h-4 rounded-full border border-slate-300"
+                                            className="w-5 h-5 rounded-full border-2 border-white shadow-sm ring-1 ring-slate-200"
                                             style={{ backgroundColor: color }}
                                             title={getColorName(color)}
-                                        ></div>
+                                        />
                                     ))}
                                     {product.colors.length > 3 && (
-                                        <span className="text-xs text-slate-500">+{product.colors.length - 3}</span>
+                                        <span className="text-xs text-slate-500 font-medium">+{product.colors.length - 3}</span>
                                     )}
                                 </div>
                             )}
                             
-                            {/* Sizes displayed as small badges */}
+                            {/* Sizes */}
                             {sizes && sizes.length > 0 && (
                                 <div className="flex items-center gap-1">
-                                    {sizes.slice(0, 3).map((size, index) => (
-                                        <div key={index} className="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
+                                    {sizes.slice(0, 2).map((size, index) => (
+                                        <div key={index} className="text-xs px-2 py-0.5 bg-slate-100 rounded-md text-slate-700 font-medium">
                                             {size}
                                         </div>
                                     ))}
-                                    {sizes.length > 3 && (
-                                        <span className="text-xs text-slate-500">+{sizes.length - 3}</span>
+                                    {sizes.length > 2 && (
+                                        <span className="text-xs text-slate-500 font-medium">+{sizes.length - 2}</span>
                                     )}
                                 </div>
                             )}
                             
-                            {/* Scents displayed as small badges */}
+                            {/* Scents */}
                             {scents && scents.length > 0 && (
                                 <div className="flex items-center gap-1">
-                                    {scents.slice(0, 2).map((scent, index) => (
-                                        <div key={index} className="text-xs px-1.5 py-0.5 bg-purple-100 rounded text-purple-700">
+                                    {scents.slice(0, 1).map((scent, index) => (
+                                        <div key={index} className="text-xs px-2 py-0.5 bg-purple-100 rounded-md text-purple-700 font-medium">
                                             {scent}
                                         </div>
                                     ))}
-                                    {scents.length > 2 && (
-                                        <span className="text-xs text-slate-500">+{scents.length - 2}</span>
+                                    {scents.length > 1 && (
+                                        <span className="text-xs text-slate-500 font-medium">+{scents.length - 1}</span>
                                     )}
                                 </div>
                             )}
@@ -232,24 +239,32 @@ const ProductCard = ({ product }) => {
                     </div>
                     
                     {/* Price and stock status */}
-                    <div className='flex items-center justify-between mt-2'>
-                        <div>
-                            <p className="font-bold text-slate-800">
-                                {currency}{product?.price || '0'}
+                    <div className='flex items-center justify-between mt-2 pt-3 border-t border-slate-100'>
+                        <div className="flex flex-col">
+                            <div className="flex items-baseline gap-2">
+                                <p className="font-bold text-lg text-slate-800">
+                                    {currency}{product?.price || '0'}
+                                </p>
                                 {product?.mrp && product.mrp > product.price && (
-                                    <span className="text-sm text-slate-500 line-through font-normal ml-2">
+                                    <span className="text-xs text-slate-400 line-through font-medium">
                                         {currency}{product.mrp}
                                     </span>
                                 )}
-                            </p>
+                            </div>
+                            {/* Show quantity if available */}
+                            {totalQuantity !== null && totalQuantity > 0 && totalQuantity <= 10 && (
+                                <span className="text-xs text-orange-600 font-medium mt-0.5">
+                                    Only {totalQuantity} left
+                                </span>
+                            )}
                         </div>
                         
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                             product?.inStock
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
                         }`}>
-                            {product?.inStock ? 'In Stock' : 'Out of Stock'}
+                            {product?.inStock ? 'In Stock' : 'Out'}
                         </span>
                     </div>
                 </div>
