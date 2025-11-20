@@ -59,7 +59,7 @@ export default function CreateStore() {
                 toast.success('Your store has been created and is now pending approval.')
 
                 setTimeout(() => {
-                    router.push('/home')
+                    router.push('/')
                 }, 2000)
             } else {
                 toast.error(resultAction.message || 'Failed to create store')
