@@ -15,29 +15,32 @@ export default function AuthSuccess() {
     useEffect(() => {
         if (!searchParams) return;
 
-        const token = searchParams.get('token')
+        const token = searchParams.get("token")
+        console.log("Received token:", token)
 
         if (!token) {
-            router.push('/signin')
+            toast.error("No token received")
+            router.push("/signin")
             return
         }
 
         try {
-            // Save token to localStorage
-            localStorage.setItem('token', token)
+            if (typeof window !== "undefined") {
+                localStorage.setItem("token", token)
+            }
 
-            // Update Redux
             dispatch(setCredentials({ token }))
 
-            // Notify the user
-            toast.success('Authentication successful!')
+            toast.success("Authentication successful!")
 
-            // Redirect to home
-            router.push('/')
-        } catch (error) {
-            console.error("AuthSuccess error:", error)
+            setTimeout(() => {
+                router.push("/")
+            }, 300)
+
+        } catch (err) {
+            console.error("AuthSuccess error:", err)
             toast.error("Failed to handle authentication")
-            router.push('/signin')
+            router.push("/signin")
         }
 
         setLoading(false)
