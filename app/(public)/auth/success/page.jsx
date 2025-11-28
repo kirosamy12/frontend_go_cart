@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useDispatch } from "react-redux"
 import ModernLoading from "@/components/ModernLoading"
-import { setCredentials } from "@/lib/features/auth/authSlice"
+import { googleLogin } from "@/lib/features/auth/authSlice"
 import toast from "react-hot-toast"
 
 export default function AuthSuccess() {
@@ -13,7 +13,7 @@ export default function AuthSuccess() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        if (!searchParams) return;
+        if (!searchParams) return
 
         const token = searchParams.get("token")
         console.log("Received token:", token)
@@ -25,11 +25,18 @@ export default function AuthSuccess() {
         }
 
         try {
-            if (typeof window !== "undefined") {
-                localStorage.setItem("token", token)
+            // Decode user from JWT
+            const decoded = JSON.parse(atob(token.split('.')[1]))
+            const user = {
+                id: decoded.userId,
+                name: decoded.name,
+                email: decoded.email,
+                role: decoded.role || "user",
+                storeId: decoded.storeId || null,
             }
 
-            dispatch(setCredentials({ token }))
+            // Dispatch Google login
+            dispatch(googleLogin({ user, token }))
 
             toast.success("Authentication successful!")
 
