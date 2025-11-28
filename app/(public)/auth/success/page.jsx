@@ -13,31 +13,35 @@ export default function AuthSuccess() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        if (!searchParams) return;
+
         const token = searchParams.get('token')
-        
-        if (token) {
+
+        if (!token) {
+            router.push('/signin')
+            return
+        }
+
+        try {
             // Save token to localStorage
             localStorage.setItem('token', token)
-            
-            // Set credentials in Redux store
+
+            // Update Redux
             dispatch(setCredentials({ token }))
-            
-            // Show success message
+
+            // Notify the user
             toast.success('Authentication successful!')
-            
-            // Redirect to home page
+
+            // Redirect to home
             router.push('/')
-        } else {
-            // If no token, redirect to signin
+        } catch (error) {
+            console.error("AuthSuccess error:", error)
+            toast.error("Failed to handle authentication")
             router.push('/signin')
         }
-        
-        // Set loading to false after a short delay to ensure smooth transition
-        const timer = setTimeout(() => {
-            setLoading(false)
-        }, 1000)
-        
-        return () => clearTimeout(timer)
+
+        setLoading(false)
+
     }, [searchParams, dispatch, router])
 
     if (loading) {
