@@ -353,22 +353,3 @@ export default function StoreEditProduct() {
         </form>
     )
 }
-            </div >
-
-            <br />
-
-            <button
-                disabled={loading || !isAuthenticated || categoriesLoading}
-                className="bg-slate-800 text-white px-6 mt-7 py-2 hover:bg-slate-900 rounded transition disabled:opacity-50"
-            >
-                {loading ? "Updating..." : "Update Product"}
-            </button>
-
-{
-    !isAuthenticated && (
-        <p className="text-red-500 text-sm mt-2">Please log in to update products</p>
-    )
-}
-        </form >
-    )
-}
