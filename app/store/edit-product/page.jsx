@@ -231,8 +231,8 @@ export default function StoreEditProduct() {
 
     // Find the selected category object
     const selectedCategory = categories.find(cat => cat.id === productInfo.category);
-    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') || 
-                            selectedCategory?.name?.toLowerCase().includes('candles');
+    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') ||
+        selectedCategory?.name?.toLowerCase().includes('candles');
 
     if (productLoading) {
         return <div className="text-center py-8">Loading product...</div>
@@ -380,7 +380,7 @@ export default function StoreEditProduct() {
                         </button>
                     </div>
                 </label>
-                
+
                 {/* Display added sizes */}
                 {sizes.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -413,5 +413,24 @@ export default function StoreEditProduct() {
                 <p className="text-red-500 text-sm mt-2">Please log in to update products</p>
             )}
         </form>
+    )
+}
+            </div >
+
+            <br />
+
+            <button
+                disabled={loading || !isAuthenticated || categoriesLoading}
+                className="bg-slate-800 text-white px-6 mt-7 py-2 hover:bg-slate-900 rounded transition disabled:opacity-50"
+            >
+                {loading ? "Updating..." : "Update Product"}
+            </button>
+
+{
+    !isAuthenticated && (
+        <p className="text-red-500 text-sm mt-2">Please log in to update products</p>
+    )
+}
+        </form >
     )
 }

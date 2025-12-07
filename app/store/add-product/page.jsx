@@ -53,7 +53,7 @@ export default function StoreAddProduct() {
         if (e && e.preventDefault) {
             e.preventDefault()
         }
-        
+
         const trimmedSize = newSize.trim().toUpperCase()
         if (trimmedSize && !productInfo.sizes.includes(trimmedSize)) {
             setProductInfo({
@@ -75,7 +75,7 @@ export default function StoreAddProduct() {
         const newQuantities = { ...sizeQuantities }
         delete newQuantities[sizeToRemove]
         setSizeQuantities(newQuantities)
-        
+
         // Remove this size from all color size quantities
         const newColorSizeQuantities = { ...colorSizeQuantities }
         Object.keys(newColorSizeQuantities).forEach(color => {
@@ -105,38 +105,38 @@ export default function StoreAddProduct() {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files)
-        
-        const validFiles = files.filter(file => 
-            file.type.startsWith('image/') && 
+
+        const validFiles = files.filter(file =>
+            file.type.startsWith('image/') &&
             (file.type === 'image/jpeg' || file.type === 'image/jpg' || file.type === 'image/png' || file.type === 'image/webp')
         )
-        
+
         if (validFiles.length !== files.length) {
             toast.error("Please upload only JPG, JPEG, PNG, or WebP images")
             return
         }
-        
+
         const largeFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024)
         if (largeFiles.length > 0) {
             toast.error("Image size should be less than 5MB")
             return
         }
-        
+
         const previews = validFiles.map(file => URL.createObjectURL(file))
-        
+
         setImages(prevImages => [...prevImages, ...validFiles])
         setImagePreviews(prevPreviews => [...prevPreviews, ...previews])
     }
 
     const removeImage = (index) => {
         URL.revokeObjectURL(imagePreviews[index])
-        
+
         const newImages = [...images]
         const newPreviews = [...imagePreviews]
-        
+
         newImages.splice(index, 1)
         newPreviews.splice(index, 1)
-        
+
         setImages(newImages)
         setImagePreviews(newPreviews)
     }
@@ -197,7 +197,7 @@ export default function StoreAddProduct() {
             formData.append('mrp', productInfo.mrp)
             formData.append('category', productInfo.category)
             formData.append('inStock', productInfo.inStock)
-            
+
             // Append colors, sizes, and scents if they have values
             if (productInfo.colors.length > 0) {
                 formData.append('colors', JSON.stringify(productInfo.colors))
@@ -220,10 +220,10 @@ export default function StoreAddProduct() {
 
             // Dispatch action
             const result = await dispatch(addProduct({ productData: formData, token }))
-            
+
             if (addProduct.fulfilled.match(result)) {
                 toast.success("Product added successfully!")
-                
+
                 // Reset form
                 setProductInfo({
                     name: "",
@@ -269,8 +269,8 @@ export default function StoreAddProduct() {
 
     // Find the selected category object
     const selectedCategory = categories.find(cat => cat.id === productInfo.category);
-    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') || 
-                            selectedCategory?.name?.toLowerCase().includes('candles');
+    const isCandleCategory = selectedCategory?.name?.toLowerCase().includes('candle') ||
+        selectedCategory?.name?.toLowerCase().includes('candles');
 
     if (categoriesLoading) {
         return <ModernLoading />
@@ -307,16 +307,16 @@ export default function StoreAddProduct() {
                 <label htmlFor="image-upload" className="cursor-pointer w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md hover:border-blue-400 transition-colors">
                     <div className="text-gray-400 text-2xl">+</div>
                     <div className="text-xs text-gray-500 mt-1">Add</div>
-                    <input 
-                        onChange={handleImageUpload} 
-                        type="file" 
-                        id="image-upload" 
-                        hidden 
-                        multiple 
+                    <input
+                        onChange={handleImageUpload}
+                        type="file"
+                        id="image-upload"
+                        hidden
+                        multiple
                         accept="image/jpeg,image/jpg,image/png,image/webp"
                     />
                 </label>
-                
+
                 {/* Image count indicator */}
                 {images.length > 0 && (
                     <div className="self-center text-sm text-gray-500">
@@ -490,8 +490,8 @@ export default function StoreAddProduct() {
                                     <tr key={colorIndex}>
                                         <td className="border-b border-r border-gray-200 p-2">
                                             <div className="flex items-center">
-                                                <div 
-                                                    className="w-4 h-4 rounded-full border border-gray-300 mr-2" 
+                                                <div
+                                                    className="w-4 h-4 rounded-full border border-gray-300 mr-2"
                                                     style={{ backgroundColor: color }}
                                                 ></div>
                                                 <span>{color}</span>
@@ -536,7 +536,7 @@ export default function StoreAddProduct() {
             {!isAuthenticated && (
                 <p className="text-red-500 text-sm mt-2">Please log in to add products</p>
             )}
-            
+
             {/* Image upload tips */}
             <div className="text-xs text-gray-500 mt-2">
                 Tip: You can select multiple images at once. Supported formats: JPG, PNG, WebP (max 5MB each)
